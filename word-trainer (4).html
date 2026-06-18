@@ -1,0 +1,2407 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Trainer 🚀</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #ff4757;
+    --accent2: #ffa502;
+    --green: #2ed573;
+    --blue: #5352ed;
+    --text: #f0f0f5;
+    --muted: #7878a0;
+    --card-radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .stats-bar { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+  .stats-bar b { color: var(--text); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 20px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all .2s;
+  }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* MAIN */
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+  /* CATEGORY FILTERS */
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    transition: all .2s;
+  }
+  .filter-btn.on { border-color: var(--accent2); color: var(--accent2); }
+
+  /* FLASHCARD */
+  .card-wrap {
+    perspective: 1200px;
+    margin-bottom: 20px;
+  }
+  .card {
+    width: 100%;
+    height: 280px;
+    border-radius: var(--card-radius);
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .5s cubic-bezier(.4,0,.2,1);
+    cursor: pointer;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--card-radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    padding: 24px;
+    text-align: center;
+    border: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .card-front { background: var(--surface); }
+  .card-back { background: var(--surface2); transform: rotateY(180deg); }
+  .card-hint { font-size: 11px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .card-word { font-size: 32px; font-weight: 800; letter-spacing: -1px; color: var(--accent); }
+  .card-transcription { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .card-translation { font-size: 22px; font-weight: 700; color: var(--green); }
+  .card-example { margin-top: 14px; padding: 12px 14px; background: rgba(0,0,0,.15); border-radius: 10px; border-left: 3px solid var(--blue); width: 100%; }
+  .card-example-en { font-size: 13px; font-style: italic; color: var(--text); margin-bottom: 4px; }
+  .card-example-uk { font-size: 12px; color: var(--muted); }
+  .card-category { font-size: 11px; color: var(--muted); margin-top: 10px; background: var(--border); padding: 3px 10px; border-radius: 100px; }
+  .card-tap-hint { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  /* ACTIONS */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-wrong { background: rgba(255,71,87,.15); color: var(--accent); }
+  .btn-wrong:hover { background: rgba(255,71,87,.25); }
+  .btn-right { background: rgba(46,213,115,.15); color: var(--green); }
+  .btn-right:hover { background: rgba(46,213,115,.25); }
+  .btn-skip { background: var(--surface2); color: var(--muted); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  /* PROGRESS */
+  .progress-wrap { margin-bottom: 20px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width .3s; }
+
+  /* QUIZ MODE */
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .quiz-opt {
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+  }
+  .quiz-opt:hover { border-color: var(--blue); }
+  .quiz-opt.correct { border-color: var(--green); background: rgba(46,213,115,.1); color: var(--green); }
+  .quiz-opt.wrong { border-color: var(--accent); background: rgba(255,71,87,.1); color: var(--accent); }
+
+  /* WORD LIST */
+  .word-list { display: flex; flex-direction: column; gap: 6px; }
+  .word-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .word-item .eng { font-weight: 700; flex: 1; }
+  .word-item .trans { color: var(--accent); font-weight: 600; flex: 1; }
+  .word-item .cat { font-size: 11px; color: var(--muted); background: var(--border); padding: 2px 8px; border-radius: 100px; }
+  .word-item .known-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .known { background: var(--green); }
+  .unknown { background: var(--border); }
+
+  /* SEARCH */
+  .search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* ADD WORD */
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .add-form h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .form-input {
+    flex: 1;
+    min-width: 140px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); }
+  select.form-input { cursor: pointer; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* RESULTS */
+  .result-box {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-box .big { font-size: 60px; font-weight: 800; }
+  .result-box .label { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+  .result-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .result-stat .val { font-size: 24px; font-weight: 800; }
+  .result-stat .lbl { font-size: 12px; color: var(--muted); }
+  .val-green { color: var(--green); }
+  .val-red { color: var(--accent); }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+  .badge-a1 { background: rgba(83,82,237,.2); color: #7c7bff; }
+  .badge-a2 { background: rgba(255,165,2,.15); color: var(--accent2); }
+  .badge-b1 { background: rgba(46,213,115,.15); color: var(--green); }
+  .badge-b2 { background: rgba(255,71,87,.15); color: var(--accent); }
+  .badge-phrase { background: rgba(255,71,87,.15); color: var(--accent); }
+  .badge-collocations { background: rgba(255,165,2,.15); color: var(--accent2); }
+  .badge-discourse { background: rgba(83,82,237,.2); color: #7c7bff; }
+  .badge-slang { background: rgba(46,213,115,.15); color: var(--green); }
+  .badge-tired { background: rgba(120,120,160,.15); color: var(--muted); }
+  .badge-pronouns { background: rgba(255,71,87,.1); color: #ff9090; }
+  .badge-reactions { background: rgba(255,200,0,.15); color: #ffd000; }
+  .badge-feelings { background: rgba(255,100,150,.15); color: #ff6496; }
+  .badge-smalltalk { background: rgba(100,200,255,.15); color: #64c8ff; }
+  .badge-phrasal { background: rgba(255,120,0,.15); color: #ff7800; }
+  .badge-phone { background: rgba(80,200,120,.15); color: #50c878; }
+  .badge-opinion { background: rgba(180,100,255,.15); color: #b464ff; }
+  .badge-story { background: rgba(255,180,50,.15); color: #ffb432; }
+  .badge-agree { background: rgba(50,180,200,.15); color: #32b4c8; }
+  .badge-lesson { background: rgba(130,80,255,.2); color: #a066ff; }
+  .badge-c1 { background: rgba(255,71,87,.2); color: #ff6b7a; }
+  .badge-antonyms { background: rgba(255,150,50,.15); color: #ff9632; }
+  .badge-function { background: rgba(140,140,180,.2); color: #c0c0e0; }
+  .badge-quantity { background: rgba(70,190,210,.15); color: #46bed2; }
+  .badge-questions { background: rgba(255,210,80,.15); color: #ffd250; }
+  .badge-emotions2 { background: rgba(255,120,180,.15); color: #ff78b4; }
+  .badge-timewords { background: rgba(100,220,140,.15); color: #64dc8c; }
+  .badge-phrases2 { background: rgba(220,120,255,.15); color: #dc78ff; }
+  .badge-family { background: rgba(80,200,120,.18); color: #50c878; }
+  .badge-routines { background: rgba(80,150,255,.18); color: #5096ff; }
+  .badge-verbs2 { background: rgba(255,170,60,.18); color: #ffaa3c; }
+
+  /* TYPE-IN MODE */
+  .type-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .type-prompt-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .type-prompt { font-size: 26px; font-weight: 800; color: var(--green); }
+  .type-prompt-sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .type-input-wrap { margin-bottom: 14px; }
+  .type-input {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .type-input:focus { border-color: var(--blue); }
+  .type-input.correct { border-color: var(--green); background: rgba(46,213,115,.08); }
+  .type-input.incorrect { border-color: var(--accent); background: rgba(255,71,87,.08); }
+  .type-feedback { text-align: center; font-size: 14px; margin-bottom: 14px; min-height: 20px; }
+  .type-feedback.correct { color: var(--green); font-weight: 700; }
+  .type-feedback.incorrect { color: var(--accent); font-weight: 700; }
+  .type-answer-reveal { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  /* REVIEW / SRS */
+  .review-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .review-stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; }
+  .review-stat-box .num { font-size: 22px; font-weight: 800; }
+  .review-stat-box .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .srs-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .srs-btn {
+    padding: 12px 6px;
+    border-radius: 10px;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: transform .15s;
+  }
+  .srs-btn:active { transform: scale(.95); }
+  .srs-again { background: rgba(255,71,87,.18); color: var(--accent); }
+  .srs-hard { background: rgba(255,165,2,.18); color: var(--accent2); }
+  .srs-good { background: rgba(83,82,237,.2); color: #8a89ff; }
+  .srs-easy { background: rgba(46,213,115,.18); color: var(--green); }
+  .srs-sub { font-size: 10px; opacity: .7; display: block; margin-top: 2px; }
+</style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCCmkqkEAWWxMuFYvEkVjRUtdvlGl1OeQw",
+    authDomain: "word-trainer-6be68.firebaseapp.com",
+    projectId: "word-trainer-6be68",
+    storageBucket: "word-trainer-6be68.firebasestorage.app",
+    messagingSenderId: "109043560394",
+    appId: "1:109043560394:web:7fedb7ff4ad01c67faa933"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const fbDb = getFirestore(fbApp);
+  const fbAuth = getAuth(fbApp);
+  const googleProvider = new GoogleAuthProvider();
+
+  let currentUser = null;
+  let authReady = false;
+  window.fbAuthError = null;
+
+  // Обробляємо результат повернення з редіректу Google (якщо щойно увійшли)
+  // Зберігаємо проміс глобально, щоб init() міг його дочекатись перед рішенням показувати login чи ні
+  window.fbRedirectPromise = getRedirectResult(fbAuth).then((result) => {
+    if (result && result.user) {
+      console.log('Redirect sign-in success:', result.user.email);
+    }
+    return result;
+  }).catch((e) => {
+    console.error('Redirect result error:', e.code, e.message);
+    window.fbAuthError = e.code + ': ' + e.message;
+    return null;
+  });
+
+  // Слухаємо зміну стану авторизації (автоматичний вхід якщо вже залогінений раніше)
+  onAuthStateChanged(fbAuth, (user) => {
+    currentUser = user;
+    authReady = true;
+    if (window.onAuthChange) window.onAuthChange(user);
+  });
+
+  window.firebaseAPI = {
+    isReady() { return authReady; },
+    getUser() { return currentUser; },
+    getAuthError() { return window.fbAuthError; },
+    async signIn() {
+      try {
+        // Redirect замість popup — стабільніше працює на iOS/Safari/мобільних
+        await signInWithRedirect(fbAuth, googleProvider);
+      } catch(e) {
+        console.error('Sign-in error:', e);
+        window.fbAuthError = e.code + ': ' + e.message;
+      }
+    },
+    async signOutUser() {
+      await signOut(fbAuth);
+    },
+    async getProgress() {
+      if (!currentUser) return null;
+      try {
+        const ref = doc(fbDb, 'progress', currentUser.uid);
+        const snap = await getDoc(ref);
+        return snap.exists() ? snap.data() : null;
+      } catch(e) {
+        console.error('Firebase get error:', e);
+        return null;
+      }
+    },
+    async setProgress(data) {
+      if (!currentUser) return false;
+      try {
+        const ref = doc(fbDb, 'progress', currentUser.uid);
+        await setDoc(ref, data);
+        return true;
+      } catch(e) {
+        console.error('Firebase set error:', e);
+        return false;
+      }
+    }
+  };
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Word<span>Trainer</span> 🚀</div>
+  <div class="stats-bar">
+    <span id="sync-badge" style="font-size:11px;color:var(--green);opacity:0;transition:opacity .4s"></span>
+    <span id="nav-due" style="display:none"></span>
+    <span>Вивчено: <b id="nav-known">0</b></span>
+    <span>Всього: <b id="nav-total">0</b></span>
+    <span id="nav-user" style="display:none;cursor:pointer" onclick="handleSignOut()" title="Натисни щоб вийти"></span>
+  </div>
+</nav>
+
+<div class="tabs">
+  <button class="tab active" onclick="setTab('flash')">Картки</button>
+  <button class="tab" onclick="setTab('type')">Письмо</button>
+  <button class="tab" onclick="setTab('quiz')">Тест</button>
+  <button class="tab" onclick="setTab('review')">Повторення</button>
+  <button class="tab" onclick="setTab('list')">Список</button>
+  <button class="tab" onclick="setTab('add')">+ Додати</button>
+</div>
+
+<main id="app"></main>
+
+<script>
+// ============ DATA ============
+const CATEGORIES = {
+  a1: { label: 'A1 Elementary', badge: 'badge-a1' },
+  a2: { label: 'A2 Pre-Intermediate', badge: 'badge-a2' },
+  b1: { label: 'B1 Intermediate', badge: 'badge-b1' },
+  c1: { label: 'C1 Advanced', badge: 'badge-c1' },
+  antonyms: { label: '⚖️ Антоніми', badge: 'badge-antonyms' },
+  function: { label: '🔧 Службові слова', badge: 'badge-function' },
+  quantity: { label: '🔢 Кількість', badge: 'badge-quantity' },
+  questions: { label: '❓ Питальні слова', badge: 'badge-questions' },
+  emotions2: { label: '😊 Емоції/стани', badge: 'badge-emotions2' },
+  timewords: { label: '⏰ Час (слова)', badge: 'badge-timewords' },
+  phrases2: { label: '💭 Розмовні фрази', badge: 'badge-phrases2' },
+  family: { label: '👨‍👩‍👧 Сім\'я', badge: 'badge-family' },
+  routines: { label: '📅 Щоденні дії', badge: 'badge-routines' },
+  verbs2: { label: '🎯 Дієслова (нові)', badge: 'badge-verbs2' },
+  reactions: { label: '😮 Реакції', badge: 'badge-reactions' },
+  feelings: { label: '💛 Емоції', badge: 'badge-feelings' },
+  smalltalk: { label: '💬 Small Talk', badge: 'badge-smalltalk' },
+  phrasal: { label: '🔥 Phrasal Verbs', badge: 'badge-phrasal' },
+  phone: { label: '📱 Телефон/Чат', badge: 'badge-phone' },
+  opinion: { label: '🗣️ Думка', badge: 'badge-opinion' },
+  story: { label: '📖 Розповідь', badge: 'badge-story' },
+  agree: { label: '🤝 Згода/Незгода', badge: 'badge-agree' },
+  slang: { label: 'Сленг / Фрази', badge: 'badge-slang' },
+  tired: { label: 'Про втому', badge: 'badge-tired' },
+  discourse: { label: "Зв'язки мовлення", badge: 'badge-discourse' },
+  collocations: { label: 'Collocations', badge: 'badge-collocations' },
+  lesson: { label: '📚 Мій урок', badge: 'badge-lesson' },
+};
+
+const BASE_WORDS = [
+  // A1 — з картинок
+  {e:'Actually',t:'Насправді',tr:'Екчуалі',c:'a1'},
+  {e:'Maybe',t:'Можливо',tr:'Мейбі',c:'a1'},
+  {e:'Always',t:'Завжди',tr:'Олвейз',c:'a1'},
+  {e:'Never',t:'Ніколи',tr:'Невер',c:'a1'},
+  {e:'Sometimes',t:'Іноді',tr:'Самтаймз',c:'a1'},
+  {e:'Because',t:'Тому що',tr:'Бікоз',c:'a1'},
+  {e:'Together',t:'Разом',tr:'Туґезер',c:'a1'},
+  {e:'Place',t:'Місце',tr:'Плейс',c:'a1'},
+  {e:'People',t:'Люди',tr:'Піпл',c:'a1'},
+  {e:'Question',t:'Питання',tr:'Квешчен',c:'a1'},
+  {e:'Answer',t:'Відповідь',tr:'Ансер',c:'a1'},
+  {e:'Important',t:'Важливий',tr:'Імпортант',c:'a1'},
+  {e:'Ready',t:'Готовий',tr:'Реді',c:'a1'},
+  {e:'Cheap',t:'Дешевий',tr:'Чіп',c:'a1'},
+  {e:'Expensive',t:'Дорогий',tr:'Ікспенсів',c:'a1'},
+  {e:'Funny',t:'Смішний',tr:'Фані',c:'a1'},
+  {e:'Easy',t:'Легко',tr:'Ізі',c:'a1'},
+  {e:'Difficult',t:'Важко',tr:'Дифіколт',c:'a1'},
+  {e:'Everywhere',t:'Всюди',tr:'Еврівеар',c:'a1'},
+  {e:'Something',t:'Щось',tr:'Самсінґ',c:'a1'},
+  {e:'Nothing',t:'Нічого',tr:'Насінґ',c:'a1'},
+  {e:'Everything',t:'Все',tr:'Еврісінґ',c:'a1'},
+  {e:'To help',t:'Допомагати',tr:'Ту хелп',c:'a1'},
+  {e:'To understand',t:'Розуміти',tr:'Ту андерстенд',c:'a1'},
+  {e:'To need',t:'Потребувати',tr:'Ту нід',c:'a1'},
+  {e:'To want',t:'Хотіти',tr:'Ту вонт',c:'a1'},
+  {e:'To try',t:'Пробувати/намагатися',tr:'Ту трай',c:'a1'},
+  {e:'To call',t:'Дзвонити/називати',tr:'Ту кол',c:'a1'},
+  {e:'To use',t:'Використовувати',tr:'Ту юз',c:'a1'},
+  {e:'To wait',t:'Чекати',tr:'Ту вейт',c:'a1'},
+  // A1 — особисті дані та знайомство
+  {e:'My name is',t:'Мене звати',tr:'Май нейм із',c:'a1'},
+  {e:'Nice to meet you',t:'Приємно познайомитися',tr:'Найс ту міт ю',c:'a1'},
+  {e:'How are you?',t:'Як справи?',tr:'Хау ар ю?',c:'a1'},
+  {e:'I\'m fine',t:'Я в порядку',tr:'Айм файн',c:'a1'},
+  {e:'Where are you from?',t:'Звідки ти?',tr:'Вер ар ю фром?',c:'a1'},
+  {e:'How old are you?',t:'Скільки тобі років?',tr:'Хау оулд ар ю?',c:'a1'},
+  {e:'I live in',t:'Я живу в...',tr:'Ай ліv ін',c:'a1'},
+  {e:'I work as',t:'Я працюю...',tr:'Ай ворк ез',c:'a1'},
+  {e:'I speak English',t:'Я розмовляю англійською',tr:'Ай спік інґліш',c:'a1'},
+  {e:'Can you repeat?',t:'Можеш повторити?',tr:'Кен ю ріпіт?',c:'a1'},
+  {e:'I don\'t understand',t:'Я не розумію',tr:'Ай доунт андерстенд',c:'a1'},
+  {e:'Please speak slowly',t:'Говори повільніше, будь ласка',tr:'Пліз спік слоулі',c:'a1'},
+  {e:'What does it mean?',t:'Що це означає?',tr:'Вот даз іт мін?',c:'a1'},
+  {e:'Sorry',t:'Вибач / Перепрошую',tr:'Сорі',c:'a1'},
+  {e:'Excuse me',t:'Вибачте / Дозвольте',tr:'Ікск\'юз мі',c:'a1'},
+  {e:'Please',t:'Будь ласка',tr:'Пліз',c:'a1'},
+  {e:'Thank you',t:'Дякую',tr:'Генк ю',c:'a1'},
+  {e:'You\'re welcome',t:'Будь ласка (у відповідь)',tr:'Йор велком',c:'a1'},
+  {e:'Yes',t:'Так',tr:'Єс',c:'a1'},
+  {e:'No',t:'Ні',tr:'Ноу',c:'a1'},
+  {e:'OK',t:'Добре / гаразд',tr:'Оукей',c:'a1'},
+  {e:'Of course',t:'Звичайно',tr:'Оф корс',c:'a1'},
+  {e:'I think',t:'Я думаю',tr:'Ай сінк',c:'a1'},
+  {e:'I know',t:'Я знаю',tr:'Ай ноу',c:'a1'},
+  {e:'I don\'t know',t:'Я не знаю',tr:'Ай доунт ноу',c:'a1'},
+  {e:'I like',t:'Мені подобається',tr:'Ай лайк',c:'a1'},
+  {e:'I don\'t like',t:'Мені не подобається',tr:'Ай доунт лайк',c:'a1'},
+  {e:'I have',t:'У мене є',tr:'Ай хев',c:'a1'},
+  {e:'I don\'t have',t:'У мене немає',tr:'Ай доунт хев',c:'a1'},
+  // A1 — числа та час
+  {e:'Today',t:'Сьогодні',tr:'Тудей',c:'a1'},
+  {e:'Yesterday',t:'Вчора',tr:'Йестерде',c:'a1'},
+  {e:'Tomorrow',t:'Завтра',tr:'Туморо',c:'a1'},
+  {e:'Now',t:'Зараз',tr:'Нау',c:'a1'},
+  {e:'Later',t:'Пізніше',tr:'Лейтер',c:'a1'},
+  {e:'Soon',t:'Скоро',tr:'Сун',c:'a1'},
+  {e:'Morning',t:'Ранок',tr:'Морнінґ',c:'a1'},
+  {e:'Afternoon',t:'Після обіду',tr:'Афтернун',c:'a1'},
+  {e:'Evening',t:'Вечір',tr:'Івнінґ',c:'a1'},
+  {e:'Night',t:'Ніч',tr:'Найт',c:'a1'},
+  {e:'Week',t:'Тиждень',tr:'Вік',c:'a1'},
+  {e:'Month',t:'Місяць',tr:'Мансс',c:'a1'},
+  {e:'Year',t:'Рік',tr:'Йір',c:'a1'},
+  {e:'Monday',t:'Понеділок',tr:'Манде',c:'a1'},
+  {e:'Tuesday',t:'Вівторок',tr:'Т\'юзде',c:'a1'},
+  {e:'Wednesday',t:'Середа',tr:'Венздей',c:'a1'},
+  {e:'Thursday',t:'Четвер',tr:'Серзде',c:'a1'},
+  {e:'Friday',t:'П\'ятниця',tr:'Фрайде',c:'a1'},
+  {e:'Saturday',t:'Субота',tr:'Сетерде',c:'a1'},
+  {e:'Sunday',t:'Неділя',tr:'Санде',c:'a1'},
+  {e:'What time is it?',t:'Котра година?',tr:'Вот тайм із іт?',c:'a1'},
+  {e:'Half past',t:'Половина (пів на...)',tr:'Хаф паст',c:'a1'},
+  {e:'Quarter to',t:'За чверть (до...)',tr:'Кворте ту',c:'a1'},
+  // A1 — сім\'я та люди
+  {e:'Family',t:'Сім\'я',tr:'Фемілі',c:'a1'},
+  {e:'Mother',t:'Мати',tr:'Мазер',c:'a1'},
+  {e:'Father',t:'Батько',tr:'Фазер',c:'a1'},
+  {e:'Sister',t:'Сестра',tr:'Сістер',c:'a1'},
+  {e:'Brother',t:'Брат',tr:'Брасер',c:'a1'},
+  {e:'Son',t:'Син',tr:'Сан',c:'a1'},
+  {e:'Daughter',t:'Дочка',tr:'Дотер',c:'a1'},
+  {e:'Husband',t:'Чоловік (у шлюбі)',tr:'Хазбенд',c:'a1'},
+  {e:'Wife',t:'Дружина',tr:'Вайф',c:'a1'},
+  {e:'Friend',t:'Друг',tr:'Френд',c:'a1'},
+  {e:'Boyfriend',t:'Хлопець (партнер)',tr:'Бойфренд',c:'a1'},
+  {e:'Girlfriend',t:'Дівчина (партнерка)',tr:'Ґерлфренд',c:'a1'},
+  {e:'Neighbour',t:'Сусід',tr:'Нейбер',c:'a1'},
+  {e:'Child',t:'Дитина',tr:'Чайлд',c:'a1'},
+  {e:'Baby',t:'Немовля',tr:'Бейбі',c:'a1'},
+  {e:'Man',t:'Чоловік',tr:'Мен',c:'a1'},
+  {e:'Woman',t:'Жінка',tr:'Вумен',c:'a1'},
+  {e:'Boy',t:'Хлопчик',tr:'Бой',c:'a1'},
+  {e:'Girl',t:'Дівчинка',tr:'Ґерл',c:'a1'},
+  // A1 — дім та кімнати
+  {e:'House',t:'Будинок',tr:'Хаус',c:'a1'},
+  {e:'Flat / Apartment',t:'Квартира',tr:'Флет / Апартмент',c:'a1'},
+  {e:'Room',t:'Кімната',tr:'Рум',c:'a1'},
+  {e:'Kitchen',t:'Кухня',tr:'Кіцін',c:'a1'},
+  {e:'Bedroom',t:'Спальня',tr:'Бедрум',c:'a1'},
+  {e:'Bathroom',t:'Ванна кімната',tr:'Басрум',c:'a1'},
+  {e:'Living room',t:'Вітальня',tr:'Лівінґ рум',c:'a1'},
+  {e:'Door',t:'Двері',tr:'Дор',c:'a1'},
+  {e:'Window',t:'Вікно',tr:'Віндо',c:'a1'},
+  {e:'Table',t:'Стіл',tr:'Тейбл',c:'a1'},
+  {e:'Chair',t:'Стілець',tr:'Чеар',c:'a1'},
+  {e:'Bed',t:'Ліжко',tr:'Бед',c:'a1'},
+  {e:'Sofa',t:'Диван',tr:'Соуфа',c:'a1'},
+  {e:'Key',t:'Ключ',tr:'Кі',c:'a1'},
+  {e:'Address',t:'Адреса',tr:'Едрес',c:'a1'},
+  {e:'Street',t:'Вулиця',tr:'Стріт',c:'a1'},
+  {e:'City',t:'Місто',tr:'Сіті',c:'a1'},
+  {e:'Country',t:'Країна',tr:'Кантрі',c:'a1'},
+  // A1 — їжа та напої
+  {e:'Food',t:'Їжа',tr:'Фуд',c:'a1'},
+  {e:'Water',t:'Вода',tr:'Вотер',c:'a1'},
+  {e:'Coffee',t:'Кава',tr:'Кофі',c:'a1'},
+  {e:'Tea',t:'Чай',tr:'Ті',c:'a1'},
+  {e:'Juice',t:'Сік',tr:'Джус',c:'a1'},
+  {e:'Bread',t:'Хліб',tr:'Бред',c:'a1'},
+  {e:'Meat',t:'М\'ясо',tr:'Міт',c:'a1'},
+  {e:'Fish',t:'Риба',tr:'Фіш',c:'a1'},
+  {e:'Chicken',t:'Курка',tr:'Чікен',c:'a1'},
+  {e:'Rice',t:'Рис',tr:'Райс',c:'a1'},
+  {e:'Salad',t:'Салат',tr:'Селед',c:'a1'},
+  {e:'Soup',t:'Суп',tr:'Суп',c:'a1'},
+  {e:'Fruit',t:'Фрукти',tr:'Фрут',c:'a1'},
+  {e:'Apple',t:'Яблуко',tr:'Епл',c:'a1'},
+  {e:'Banana',t:'Банан',tr:'Бенана',c:'a1'},
+  {e:'Breakfast',t:'Сніданок',tr:'Брекфест',c:'a1'},
+  {e:'Lunch',t:'Обід',tr:'Ланч',c:'a1'},
+  {e:'Dinner',t:'Вечеря',tr:'Дінер',c:'a1'},
+  {e:'Restaurant',t:'Ресторан',tr:'Ресторант',c:'a1'},
+  {e:'Menu',t:'Меню',tr:'Мен\'ю',c:'a1'},
+  {e:'Bill',t:'Рахунок',tr:'Біл',c:'a1'},
+  // A1 — одяг
+  {e:'Clothes',t:'Одяг',tr:'Клоудз',c:'a1'},
+  {e:'T-shirt',t:'Футболка',tr:'Ті-шорт',c:'a1'},
+  {e:'Shirt',t:'Сорочка',tr:'Шорт',c:'a1'},
+  {e:'Jeans',t:'Джинси',tr:'Джінз',c:'a1'},
+  {e:'Dress',t:'Сукня',tr:'Дрес',c:'a1'},
+  {e:'Jacket',t:'Куртка',tr:'Джекет',c:'a1'},
+  {e:'Shoes',t:'Взуття',tr:'Шуз',c:'a1'},
+  {e:'Hat',t:'Шапка / капелюх',tr:'Хет',c:'a1'},
+  {e:'Bag',t:'Сумка',tr:'Беґ',c:'a1'},
+  {e:'Size',t:'Розмір',tr:'Сайз',c:'a1'},
+  // A1 — місто та транспорт
+  {e:'School',t:'Школа',tr:'Скул',c:'a1'},
+  {e:'Hospital',t:'Лікарня',tr:'Хоспітл',c:'a1'},
+  {e:'Shop / Store',t:'Магазин',tr:'Шоп / Стор',c:'a1'},
+  {e:'Bank',t:'Банк',tr:'Бенк',c:'a1'},
+  {e:'Station',t:'Станція / вокзал',tr:'Стейшн',c:'a1'},
+  {e:'Airport',t:'Аеропорт',tr:'Еарпорт',c:'a1'},
+  {e:'Hotel',t:'Готель',tr:'Хоутел',c:'a1'},
+  {e:'Car',t:'Автомобіль',tr:'Кар',c:'a1'},
+  {e:'Bus',t:'Автобус',tr:'Бас',c:'a1'},
+  {e:'Train',t:'Потяг',tr:'Трейн',c:'a1'},
+  {e:'Taxi',t:'Таксі',tr:'Тексі',c:'a1'},
+  {e:'Ticket',t:'Квиток',tr:'Тікет',c:'a1'},
+  {e:'Map',t:'Карта',tr:'Мап',c:'a1'},
+  {e:'Left',t:'Ліворуч',tr:'Лефт',c:'a1'},
+  {e:'Right',t:'Праворуч',tr:'Райт',c:'a1'},
+  {e:'Straight ahead',t:'Прямо',tr:'Стрейт ехед',c:'a1'},
+  {e:'Near',t:'Близько / поруч',tr:'Нір',c:'a1'},
+  {e:'Far',t:'Далеко',tr:'Фар',c:'a1'},
+  // A1 — робота та навчання
+  {e:'Job',t:'Робота / посада',tr:'Джоб',c:'a1'},
+  {e:'Work',t:'Праця / робота',tr:'Ворк',c:'a1'},
+  {e:'Office',t:'Офіс',tr:'Офіс',c:'a1'},
+  {e:'Book',t:'Книга',tr:'Бук',c:'a1'},
+  {e:'Pen',t:'Ручка',tr:'Пен',c:'a1'},
+  {e:'Phone',t:'Телефон',tr:'Фоун',c:'a1'},
+  {e:'Computer',t:'Комп\'ютер',tr:'Комп\'ютер',c:'a1'},
+  {e:'Email',t:'Електронна пошта',tr:'Імейл',c:'a1'},
+  {e:'Message',t:'Повідомлення',tr:'Месідж',c:'a1'},
+  {e:'Meeting',t:'Зустріч / нарада',tr:'Мітінґ',c:'a1'},
+  // A1 — прикметники (базові)
+  {e:'Big / Large',t:'Великий',tr:'Біґ / Лардж',c:'a1'},
+  {e:'Small / Little',t:'Маленький',tr:'Смол / Літл',c:'a1'},
+  {e:'Good',t:'Гарний / добрий',tr:'Ґуд',c:'a1'},
+  {e:'Bad',t:'Поганий',tr:'Бед',c:'a1'},
+  {e:'New',t:'Новий',tr:'Н\'ю',c:'a1'},
+  {e:'Old',t:'Старий',tr:'Оулд',c:'a1'},
+  {e:'Fast / Quick',t:'Швидкий',tr:'Фаст / Квік',c:'a1'},
+  {e:'Slow',t:'Повільний',tr:'Слоу',c:'a1'},
+  {e:'Hot',t:'Гарячий',tr:'Хот',c:'a1'},
+  {e:'Cold',t:'Холодний',tr:'Коулд',c:'a1'},
+  {e:'Happy',t:'Щасливий',tr:'Хепі',c:'a1'},
+  {e:'Sad',t:'Сумний',tr:'Сед',c:'a1'},
+  {e:'Tired',t:'Стомлений',tr:'Тайрд',c:'a1'},
+  {e:'Hungry',t:'Голодний',tr:'Ханґрі',c:'a1'},
+  {e:'Thirsty',t:'Спраглий',tr:'Серсті',c:'a1'},
+  {e:'Busy',t:'Зайнятий',tr:'Бізі',c:'a1'},
+  {e:'Free',t:'Вільний',tr:'Фрі',c:'a1'},
+  {e:'Open',t:'Відкритий',tr:'Оупен',c:'a1'},
+  {e:'Closed',t:'Закритий',tr:'Клоузд',c:'a1'},
+  {e:'Right',t:'Правильний',tr:'Райт',c:'a1'},
+  {e:'Wrong',t:'Неправильний',tr:'Ронґ',c:'a1'},
+  {e:'Same',t:'Однаковий / той самий',tr:'Сейм',c:'a1'},
+  {e:'Different',t:'Різний / інший',tr:'Дифрент',c:'a1'},
+  {e:'Beautiful',t:'Красивий',tr:'Б\'ютіфул',c:'a1'},
+  {e:'Interesting',t:'Цікавий',tr:'Інтрестінґ',c:'a1'},
+  {e:'Boring',t:'Нудний',tr:'Борінґ',c:'a1'},
+  // A1 — дієслова (базові)
+  {e:'To be',t:'Бути',tr:'Ту бі',c:'a1'},
+  {e:'To have',t:'Мати',tr:'Ту хев',c:'a1'},
+  {e:'To do',t:'Робити',tr:'Ту ду',c:'a1'},
+  {e:'To go',t:'Іти / їхати',tr:'Ту ґоу',c:'a1'},
+  {e:'To come',t:'Приходити / приїжджати',tr:'Ту кам',c:'a1'},
+  {e:'To say',t:'Казати',tr:'Ту сей',c:'a1'},
+  {e:'To tell',t:'Розповідати',tr:'Ту тел',c:'a1'},
+  {e:'To ask',t:'Питати',tr:'Ту аск',c:'a1'},
+  {e:'To see',t:'Бачити',tr:'Ту сі',c:'a1'},
+  {e:'To look',t:'Дивитися / виглядати',tr:'Ту лук',c:'a1'},
+  {e:'To listen',t:'Слухати',tr:'Ту лісен',c:'a1'},
+  {e:'To speak',t:'Говорити',tr:'Ту спік',c:'a1'},
+  {e:'To read',t:'Читати',tr:'Ту рід',c:'a1'},
+  {e:'To write',t:'Писати',tr:'Ту райт',c:'a1'},
+  {e:'To eat',t:'Їсти',tr:'Ту іт',c:'a1'},
+  {e:'To drink',t:'Пити',tr:'Ту дрінк',c:'a1'},
+  {e:'To buy',t:'Купувати',tr:'Ту бай',c:'a1'},
+  {e:'To sell',t:'Продавати',tr:'Ту сел',c:'a1'},
+  {e:'To open',t:'Відкривати',tr:'Ту оупен',c:'a1'},
+  {e:'To close',t:'Закривати',tr:'Ту клоуз',c:'a1'},
+  {e:'To start',t:'Починати',tr:'Ту старт',c:'a1'},
+  {e:'To finish',t:'Закінчувати',tr:'Ту фініш',c:'a1'},
+  {e:'To work',t:'Працювати',tr:'Ту ворк',c:'a1'},
+  {e:'To live',t:'Жити',tr:'Ту ліv',c:'a1'},
+  {e:'To know',t:'Знати',tr:'Ту ноу',c:'a1'},
+  {e:'To like',t:'Подобатися',tr:'Ту лайк',c:'a1'},
+  {e:'To love',t:'Любити',tr:'Ту лав',c:'a1'},
+  {e:'To think',t:'Думати',tr:'Ту сінк',c:'a1'},
+  {e:'To feel',t:'Відчувати',tr:'Ту філ',c:'a1'},
+  {e:'To give',t:'Давати',tr:'Ту ґіv',c:'a1'},
+  {e:'To take',t:'Брати',tr:'Ту тейк',c:'a1'},
+  {e:'To find',t:'Знаходити',tr:'Ту файнд',c:'a1'},
+  {e:'To put',t:'Класти',tr:'Ту пут',c:'a1'},
+  {e:'To get',t:'Отримувати',tr:'Ту ґет',c:'a1'},
+  {e:'To make',t:'Робити / готувати',tr:'Ту мейк',c:'a1'},
+  {e:'To meet',t:'Зустрічати',tr:'Ту міт',c:'a1'},
+  {e:'To pay',t:'Платити',tr:'Ту пей',c:'a1'},
+  {e:'To sleep',t:'Спати',tr:'Ту сліп',c:'a1'},
+  {e:'To wake up',t:'Прокидатися',tr:'Ту вейк ап',c:'a1'},
+  {e:'To sit',t:'Сидіти',tr:'Ту сіт',c:'a1'},
+  {e:'To stand',t:'Стояти',tr:'Ту стенд',c:'a1'},
+  {e:'To walk',t:'Ходити / гуляти',tr:'Ту вок',c:'a1'},
+  {e:'To run',t:'Бігти',tr:'Ту ран',c:'a1'},
+  {e:'To travel',t:'Подорожувати',tr:'Ту тревел',c:'a1'},
+  // A1 — корисні фрази
+  {e:'Can I help you?',t:'Можу допомогти?',tr:'Кен ай хелп ю?',c:'a1'},
+  {e:'Can you help me?',t:'Можеш мені допомогти?',tr:'Кен ю хелп мі?',c:'a1'},
+  {e:'How much is it?',t:'Скільки це коштує?',tr:'Хау мач із іт?',c:'a1'},
+  {e:'Where is...?',t:'Де знаходиться...?',tr:'Вер із...?',c:'a1'},
+  {e:'I\'d like',t:'Я б хотів / хотіла',tr:'Айд лайк',c:'a1'},
+  {e:'I need',t:'Мені потрібно',tr:'Ай нід',c:'a1'},
+  {e:'That\'s great!',t:'Чудово!',tr:'Зетс ґрейт!',c:'a1'},
+  {e:'No problem',t:'Без проблем',tr:'Ноу проблем',c:'a1'},
+  {e:'See you later',t:'До зустрічі',tr:'Сі ю лейтер',c:'a1'},
+  {e:'Good morning',t:'Доброго ранку',tr:'Ґуд морнінґ',c:'a1'},
+  {e:'Good afternoon',t:'Добрий день',tr:'Ґуд афтернун',c:'a1'},
+  {e:'Good evening',t:'Добрий вечір',tr:'Ґуд івнінґ',c:'a1'},
+  {e:'Good night',t:'На добраніч',tr:'Ґуд найт',c:'a1'},
+  {e:'Goodbye',t:'До побачення',tr:'Ґудбай',c:'a1'},
+  {e:'Hello / Hi',t:'Привіт',tr:'Хелоу / Хай',c:'a1'},
+  // A2
+  {e:'Already',t:'Вже',tr:'Олреді',c:'a2'},
+  {e:'Instead',t:'Замість цього',tr:'Інстед',c:'a2'},
+  {e:'Common',t:'Спільний/поширений',tr:'Комон',c:'a2'},
+  {e:'Different',t:'Інший/різний',tr:'Дифрент',c:'a2'},
+  {e:'Enough',t:'Достатньо',tr:'Інаф',c:'a2'},
+  {e:'Almost',t:'Майже',tr:'Олмоуст',c:'a2'},
+  {e:'Suddenly',t:'Раптово',tr:'Саденлі',c:'a2'},
+  {e:'Probably',t:'Ймовірно',tr:'Пробаблі',c:'a2'},
+  {e:'Anyway',t:'У будь-якому разі',tr:'Енівей',c:'a2'},
+  {e:'Useful',t:'Корисний',tr:'Юзфул',c:'a2'},
+  {e:'Believe',t:'Вірити',tr:'Білів',c:'a2'},
+  {e:'Explain',t:'Пояснювати',tr:'Іксплейн',c:'a2'},
+  {e:'Imagine',t:'Уявляти',tr:'Імеджин',c:'a2'},
+  {e:'Decide',t:'Вирішувати',tr:'Десайд',c:'a2'},
+  {e:'Happen',t:'Траплятися',tr:'Хепен',c:'a2'},
+  {e:'Experience',t:'Досвід',tr:'Іксперіенс',c:'a2'},
+  {e:'Advice',t:'Порада',tr:'Едвайс',c:'a2'},
+  {e:'Improve',t:'Покращувати',tr:'Імпрув',c:'a2'},
+  {e:'Reason',t:'Причина',tr:'Різн',c:'a2'},
+  {e:'Opinion',t:'Думка',tr:'Опініон',c:'a2'},
+  {e:'Success',t:'Успіх',tr:'Саксес',c:'a2'},
+  {e:'Healthy',t:'Здоровий',tr:'Хелсі',c:'a2'},
+  {e:'To share',t:'Ділитися',tr:'Ту шеар',c:'a2'},
+  {e:'To agree',t:'Погоджуватися',tr:'Ту аґрі',c:'a2'},
+  {e:'To change',t:'Змінювати',tr:'Ту чейндж',c:'a2'},
+  {e:'To find out',t:'Дізнатися',tr:'Ту файнд аут',c:'a2'},
+  {e:'To hope',t:'Сподіватися',tr:'Ту хоуп',c:'a2'},
+  {e:'To worry',t:'Хвилюватися',tr:'Ту ворі',c:'a2'},
+  {e:'To suggest',t:'Пропонувати',tr:'Ту саджест',c:'a2'},
+  {e:'To travel',t:'Подорожувати',tr:'Ту тревел',c:'a2'},
+  // B1
+  {e:'Opportunity',t:'Можливість',tr:'Опортюніті',c:'b1'},
+  {e:'Fortunately',t:'На щастя',tr:'Форчунетлі',c:'b1'},
+  {e:'Unfortunately',t:'На жаль',tr:'Анфорчунетлі',c:'b1'},
+  {e:'Realize',t:'Усвідомлювати',tr:'Ріалайз',c:'b1'},
+  {e:'Influence',t:'Вплив/впливати',tr:'Інфлуенс',c:'b1'},
+  {e:'Condition',t:'Умова/стан',tr:'Кондишн',c:'b1'},
+  {e:'Incredible',t:'Неймовірний',tr:'Інкредибл',c:'b1'},
+  {e:'Responsible',t:'Відповідальний',tr:'Респонсибл',c:'b1'},
+  {e:'Solution',t:'Рішення',tr:'Солюшн',c:'b1'},
+  {e:'Benefit',t:'Користь/перевага',tr:'Бенефіт',c:'b1'},
+  {e:'Goal',t:'Ціль',tr:'Ґоул',c:'b1'},
+  {e:'Purpose',t:'Мета',tr:'Перпос',c:'b1'},
+  {e:'Knowledge',t:'Знання',tr:'Ноледж',c:'b1'},
+  {e:'To provide',t:'Надавати',tr:'Ту провайд',c:'b1'},
+  {e:'To consider',t:'Розглядати/вважати',tr:'Ту консідер',c:'b1'},
+  {e:'To manage',t:'Керувати/впоратися',tr:'Ту менедж',c:'b1'},
+  {e:'To develop',t:'Розвивати',tr:'Ту девелоп',c:'b1'},
+  {e:'To achieve',t:'Досягати',tr:'Ту ачів',c:'b1'},
+  {e:'To prevent',t:'Запобігати',tr:'Ту прівент',c:'b1'},
+  {e:'Average',t:'Середній',tr:'Евередж',c:'b1'},
+  {e:'Confident',t:'Впевнений',tr:'Конфідент',c:'b1'},
+  {e:'Curious',t:'Допитливий',tr:'К\'юріес',c:'b1'},
+  {e:'Mainly',t:'В основному',tr:'Мейнлі',c:'b1'},
+  {e:'Exactly',t:'Точно',tr:'Іґзектлі',c:'b1'},
+  {e:'Particularly',t:'Зокрема',tr:'Партік\'юлерлі',c:'b1'},
+  {e:'Relationship',t:'Стосунки',tr:'Рілейшнship',c:'b1'},
+  {e:'Situation',t:'Ситуація',tr:'Січуейшн',c:'b1'},
+  {e:'Necessary',t:'Необхідний',tr:'Нesesері',c:'b1'},
+  {e:'To involve',t:'Залучати/включати',tr:'Ту інволв',c:'b1'},
+  // B2
+  {e:'Basically',t:'По суті',tr:'Бейсіклі',c:'b2'},
+  {e:'Obviously',t:'Очевидно',tr:'Обвіеслі',c:'b2'},
+  {e:'Apparently',t:'Судячи з усього',tr:'Епарентлі',c:'b2'},
+  {e:'Regarding',t:'Щодо/стосовно',tr:'Ріґардінґ',c:'b2'},
+  {e:'Significant',t:'Значущий/істотний',tr:'Сіґніфікент',c:'b2'},
+  {e:'Essential',t:'Критично важливий',tr:'Есеншл',c:'b2'},
+  {e:'Efficient',t:'Ефективний',tr:'Ефішент',c:'b2'},
+  {e:'Appreciate',t:'Цінувати',tr:'Ту апрішіейт',c:'b2'},
+  {e:'Requirement',t:'Вимога',tr:'Ріквайрмент',c:'b2'},
+  {e:'Consequence',t:'Наслідок',tr:'Консеквенс',c:'b2'},
+  {e:'Challenge',t:'Виклик',tr:'Челендж',c:'b2'},
+  {e:'Responsibility',t:'Відповідальність',tr:'Респонсибіліті',c:'b2'},
+  {e:'Value',t:'Цінність',tr:'Валью',c:'b2'},
+  {e:'Maintain',t:'Підтримувати/зберігати',tr:'Мейнтейн',c:'b2'},
+  {e:'Awareness',t:'Обізнаність',tr:'Авеарнес',c:'b2'},
+  {e:'Impact',t:'Вплив/ефект',tr:'Імпакт',c:'b2'},
+  {e:'Approach',t:'Підхід',tr:'Епроуч',c:'b2'},
+  {e:'Flexible',t:'Гнучкий',tr:'Флексибл',c:'b2'},
+  {e:'Ambiguous',t:'Двозначний',tr:'Ембіґ\'юес',c:'b2'},
+  {e:'To accomplish',t:'Виконувати',tr:'Ту акомпліш',c:'b2'},
+  {e:'To assume',t:'Припускати',tr:'Ту асьюм',c:'b2'},
+  {e:'To encourage',t:'Заохочувати',tr:'Ту інкарідж',c:'b2'},
+  {e:'To emphasize',t:'Наголошувати',tr:'Ту емфасайз',c:'b2'},
+  {e:'To clarify',t:'Прояснити',tr:'Ту клеріфай',c:'b2'},
+  {e:'Persistent',t:'Наполегливий',tr:'Персистент',c:'b2'},
+  {e:'Sophisticated',t:'Складний',tr:'Софістікейтед',c:'b2'},
+  {e:'Inaccurate',t:'Неточний',tr:'Інак\'юрет',c:'b2'},
+  {e:'Nevertheless',t:'Тим не менш',tr:'Неверзелес',c:'b2'},
+  {e:'Substantial',t:'Суттєвий',tr:'Сабстеншл',c:'b2'},
+  {e:'Versatile',t:'Універсальний',tr:'Версатайл',c:'b2'},
+  // SLANG
+  {e:'Deal-breaker',t:'Це фініш',tr:'Діл-брейкер',c:'slang'},
+  {e:'Wishful thinking',t:'Рожеві мрії',tr:'Вішфул сінкінґ',c:'slang'},
+  {e:'Big deal',t:'Велика цяця / Подумаєш!',tr:'Біґ діл',c:'slang'},
+  {e:'Hold on',t:'Чекай / Секунду',tr:'Хоулд он',c:'slang'},
+  {e:'Go ahead',t:'Давай / Продовжуй',tr:'Ґоу ехед',c:'slang'},
+  {e:'Can\'t complain',t:'Не скаржуся',tr:'Каант комплейн',c:'slang'},
+  {e:'Same old',t:'Стабільна стабільність',tr:'Сейм оулд',c:'slang'},
+  {e:'Spot on',t:'В яблучко! / Точно в ціль',tr:'Спот он',c:'slang'},
+  {e:'Same here',t:'Я теж / Взаємно',tr:'Сейм хіе',c:'slang'},
+  {e:'Fair enough',t:'Справедливо',tr:'Фее інаф',c:'slang'},
+  {e:'You bet',t:'Ще б пак! / Залізобетонно',tr:'Ю бет',c:'slang'},
+  {e:'Big time',t:'Ще й як! / На повну',tr:'Біґ тайм',c:'slang'},
+  {e:'Suit yourself',t:'Як знаєш',tr:'Сьют юеселф',c:'slang'},
+  {e:'Drop it',t:'Проїхали / Закрили тему',tr:'Дроп іт',c:'slang'},
+  {e:'Says who?',t:'Це хто таке сказав?',tr:'Сез ху?',c:'slang'},
+  {e:'Big yikes',t:'Повний крінж',tr:'Біґ яйкс',c:'slang'},
+  {e:'Count me in',t:'Запишіть мене',tr:'Каунт мі ін',c:'slang'},
+  {e:'Step aside',t:'Одійди / Дай дорогу',tr:'Степ есайд',c:'slang'},
+  {e:'Get real',t:'Спустись на землю',tr:'Ґет ріал',c:'slang'},
+  {e:'Down bad',t:'Все паршиво',tr:'Даун бед',c:'slang'},
+  {e:'Burnt out',t:'Перегорів / Сил нуль',tr:'Беент аут',c:'slang'},
+  {e:'Exhausted',t:'Вичавлений як лимон',tr:'Іґзостед',c:'slang'},
+  // TIRED
+  {e:'Drained',t:'Виснажений',tr:'Дреінд',c:'tired'},
+  {e:'Spent',t:'Витрачений / без сил',tr:'Спент',c:'tired'},
+  {e:'Beat',t:'Знесилений / вибитий із колії',tr:'Біт',c:'tired'},
+  {e:'Pooped',t:'Зморений / захеканий',tr:'Пуупт',c:'tired'},
+  {e:'Worn out',t:'Зношений / вижатий',tr:'Ворн аут',c:'tired'},
+  {e:'Done in',t:'Слабкий від утоми',tr:'Дан ін',c:'tired'},
+  {e:'Fried',t:'«Сплавлений»',tr:'Фраід',c:'tired'},
+  {e:'Wiped out',t:'Без краплі енергії',tr:'Вайпт аут',c:'tired'},
+  {e:'Run-down',t:'Перевтомлений',tr:'Ран-даун',c:'tired'},
+  {e:'Zonked out',t:'Вирубаний',tr:'Зонкт аут',c:'tired'},
+  {e:'Ready to drop',t:'Зараз упаду',tr:'Реді ту дроп',c:'tired'},
+  {e:'Done for',t:'Склав лапки',tr:'Дан фор',c:'tired'},
+  {e:'Wrecked',t:'Знищений',tr:'Рект',c:'tired'},
+  // DISCOURSE
+  {e:'First of all',t:'По-перше...',tr:'Фьорст оф ол',c:'discourse'},
+  {e:'Secondly',t:'По-друге...',tr:'Секендлі',c:'discourse'},
+  {e:'Finally',t:'Нарешті / зрештою...',tr:'Файнелі',c:'discourse'},
+  {e:'In conclusion',t:'У висновку...',tr:'Ін кенклюзен',c:'discourse'},
+  {e:'To sum up',t:'Підбиваючи підсумки...',tr:'Ту сам ап',c:'discourse'},
+  {e:'All in all',t:'Загалом і в цілому...',tr:'Ол ін ол',c:'discourse'},
+  {e:'Whereas',t:'Тоді як / в той час як...',tr:'Верез',c:'discourse'},
+  {e:'Even though',t:'Незважаючи на те, що / хоч...',tr:'Івен зоу',c:'discourse'},
+  {e:'Conversely',t:'Навпаки...',tr:'Кенвеслі',c:'discourse'},
+  {e:'However',t:'Проте / однак...',tr:'Хауевер',c:'discourse'},
+  {e:'On the other hand',t:'З іншого боку...',tr:'Он зе азер хенд',c:'discourse'},
+  {e:'In my opinion',t:'На мою думку...',tr:'Ін май опініен',c:'discourse'},
+  {e:'From my point of view',t:'З моєї точки зору...',tr:'Фром май пойнт оф вью',c:'discourse'},
+  {e:'As far as I know',t:'Наскільки я знаю...',tr:'Ез фаар ез ай ноу',c:'discourse'},
+  {e:'To be honest',t:'Чесно кажучи...',tr:'Ту бі онест',c:'discourse'},
+  {e:'Personally, I think',t:'Особисто я вважаю...',tr:'Персенелі ай сінк',c:'discourse'},
+  {e:'In other words',t:'Іншими словами...',tr:'Ін азер вордз',c:'discourse'},
+  {e:'That is to say',t:'Інакше кажучи...',tr:'Зет із ту сей',c:'discourse'},
+  {e:'To put it simply',t:'Простіше кажучи...',tr:'Ту пут іт сімплі',c:'discourse'},
+  {e:'By the way',t:'До речі...',tr:'Бай зе вей',c:'discourse'},
+  {e:'Turns out',t:'Виявилося, що...',tr:'Тернз аут',c:'discourse'},
+  {e:'At the end of the day',t:'Зрештою / у підсумку...',tr:'Ет зе енд оф зе дей',c:'discourse'},
+  // COLLOCATIONS
+  {e:'Catch a cold',t:'Застудитися',tr:'',c:'collocations'},
+  {e:'Catch a bus',t:'Встигнути на автобус',tr:'',c:'collocations'},
+  {e:'Let me know',t:'Дай мені знати',tr:'',c:'collocations'},
+  {e:'Keep in touch',t:'Бути на зв\'язку',tr:'',c:'collocations'},
+  {e:'Keep in mind',t:'Мати на увазі',tr:'',c:'collocations'},
+  {e:'Pay attention',t:'Звертати увагу',tr:'',c:'collocations'},
+  {e:'Give advice',t:'Дати пораду',tr:'',c:'collocations'},
+  {e:'Give a chance',t:'Дати шанс',tr:'',c:'collocations'},
+  {e:'Give a hug',t:'Обійняти',tr:'',c:'collocations'},
+  {e:'Get lost',t:'Загубитися',tr:'',c:'collocations'},
+  {e:'Get ready',t:'Підготуватися',tr:'',c:'collocations'},
+  {e:'Have a rest',t:'Відпочити',tr:'',c:'collocations'},
+  {e:'Have a good time',t:'Добре провести час',tr:'',c:'collocations'},
+  {e:'Take a break',t:'Зробити перерву',tr:'',c:'collocations'},
+  {e:'Take a look',t:'Поглянути',tr:'',c:'collocations'},
+  {e:'Take a chance',t:'Ризикнути / Скористатися шансом',tr:'',c:'collocations'},
+  {e:'Make a decision',t:'Прийняти рішення',tr:'',c:'collocations'},
+  {e:'Make an effort',t:'Докласти зусиль',tr:'',c:'collocations'},
+  {e:'Make the bed',t:'Застелити ліжко',tr:'',c:'collocations'},
+  {e:'Do your homework',t:'Робити домашнє завдання',tr:'',c:'collocations'},
+  {e:'Do the dishes',t:'Мити посуд',tr:'',c:'collocations'},
+  {e:'Go shopping',t:'Йти за покупками',tr:'',c:'collocations'},
+  {e:'Go abroad',t:'Поїхати за кордон',tr:'',c:'collocations'},
+  {e:'Come to a decision',t:'Прийти до рішення',tr:'',c:'collocations'},
+  // PRONOUNS
+  {e:'All',t:'Усі (100% об\'єктів)',tr:'Ол',c:'pronouns'},
+  {e:'Most',t:'Більшість (70-80%)',tr:'Моуст',c:'pronouns'},
+  {e:'Some',t:'Трохи / декілька',tr:'Сам',c:'pronouns'},
+  {e:'None',t:'Жодного (абсолютний нуль)',tr:'Нан',c:'pronouns'},
+  {e:'Both',t:'Обидва (коли об\'єктів ВСЬОГО ДВА)',tr:'Боус',c:'pronouns'},
+  {e:'Everything',t:'Абсолютно все',tr:'Еврісінґ',c:'pronouns'},
+  {e:'Something',t:'Щось конкретне',tr:'Самсінґ',c:'pronouns'},
+  {e:'Anything',t:'Будь-що (взагалі без різниці)',tr:'Енісінґ',c:'pronouns'},
+  {e:'Nothing',t:'Нічого',tr:'Насінґ',c:'pronouns'},
+  {e:'Everybody',t:'Усі присутні (кожен у кімнаті)',tr:'Еврібаді',c:'pronouns'},
+  {e:'Somebody',t:'Хтось один (ще не вибрав хто)',tr:'Самбаді',c:'pronouns'},
+  {e:'Anybody',t:'Хто-небудь / будь-хто',tr:'Енібаді',c:'pronouns'},
+  {e:'Nobody',t:'Ніхто',tr:'Ноубаді',c:'pronouns'},
+
+  // МІЙ УРОК — слова з readyto
+  {e:'Neighbours',t:'Сусіди',tr:'Нейберз',c:'lesson'},
+  {e:'Argue',t:'Сваритися',tr:'Ар\'ґ\'ю',c:'lesson'},
+  {e:'Agree',t:'Погоджуватися',tr:'Еґрі',c:'lesson'},
+  {e:'When I\'m sick / ill',t:'Коли я хворію',tr:'Вен айм сік / іл',c:'lesson'},
+  {e:'In my yard',t:'У моєму дворі',tr:'Ін май ярд',c:'lesson'},
+  {e:'In the choir',t:'У хорі',tr:'Ін зе кваєр',c:'lesson'},
+  {e:'She\'s painting the wall',t:'Вона фарбує стіну',tr:'Шіз пейнтінґ зе вол',c:'lesson'},
+  {e:'Nothing is happening in the garden',t:'У саду нічого не відбувається',tr:'Насінґ із хепенінґ ін зе ґарден',c:'lesson'},
+  {e:'She\'s checking in a hotel',t:'Вона реєструється в готелі',tr:'Шіз чекінґ ін е хоутел',c:'lesson'},
+  {e:'Car keys',t:'Ключі від машини',tr:'Кар кіз',c:'lesson'},
+  {e:'The man is talking to a woman',t:'Чоловік розмовляє з жінкою',tr:'Зе мен із токінґ ту е вумен',c:'lesson'},
+  {e:'Pay',t:'Платити / зарплата',tr:'Пей',c:'lesson'},
+  {e:'Overtime',t:'Понаднормова робота',tr:'Оувертайм',c:'lesson'},
+  {e:'Weather forecast',t:'Прогноз погоди',tr:'Везер форкаст',c:'lesson'},
+  {e:'Typical',t:'Типовий',tr:'Тіпікл',c:'lesson'},
+  {e:'Somebody\'s',t:'Чийсь',tr:'Самбадіз',c:'lesson'},
+  {e:'Turn',t:'Черга / поворот',tr:'Терн',c:'lesson'},
+  {e:'At last',t:'Нарешті',tr:'Ет ласт',c:'lesson'},
+  {e:'Judge',t:'Суддя / судити',tr:'Джадж',c:'lesson'},
+  {e:'Vote for',t:'Голосувати за',tr:'Воут фор',c:'lesson'},
+  {e:'Month',t:'Місяць',tr:'Мансс',c:'lesson'},
+  {e:'Walk on a treadmill',t:'Ходити на біговій доріжці',tr:'Вок он е тредміл',c:'lesson'},
+  {e:'Walking pad',t:'Компактна бігова доріжка',tr:'Вокінґ пед',c:'lesson'},
+  {e:'I have a day off',t:'У мене вихідний',tr:'Ай хев е дей оф',c:'lesson'},
+  {e:'I\'m allergic to trees blooming',t:'У мене алергія на цвітіння дерев',tr:'Айм елерджік ту тріз блумінґ',c:'lesson'},
+  {e:'I have allergy',t:'У мене алергія',tr:'Ай хев елерджі',c:'lesson'},
+  {e:'Every other day',t:'Через день',tr:'Еврі азер дей',c:'lesson'},
+  {e:'Coast',t:'Узбережжя',tr:'Коуст',c:'lesson'},
+  {e:'Beans',t:'Квасоля',tr:'Бінз',c:'lesson'},
+  {e:'Herbal tea',t:'Трав\'яний чай',tr:'Хербл ті',c:'lesson'},
+  {e:'Make a difference',t:'Змінювати щось / мати значення',tr:'Мейк е діференс',c:'lesson'},
+  {e:'Have a nap',t:'Подрімати',tr:'Хев е нап',c:'lesson'},
+  {e:'Small meal',t:'Невеликий прийом їжі',tr:'Смол міл',c:'lesson'},
+  {e:'Little meat',t:'Мало м\'яса',tr:'Літл міт',c:'lesson'},
+  {e:'North',t:'Північ',tr:'Норс',c:'lesson'},
+  {e:'South',t:'Південь',tr:'Саус',c:'lesson'},
+  {e:'East',t:'Схід',tr:'Іст',c:'lesson'},
+  {e:'West',t:'Захід',tr:'Вест',c:'lesson'},
+  {e:'During',t:'Під час',tr:'Д\'юрінґ',c:'lesson'},
+  {e:'At around midnight',t:'Приблизно опівночі',tr:'Ет ераунд мідна\'йт',c:'lesson'},
+  {e:'For breakfast',t:'На сніданок',tr:'Фор брекфест',c:'lesson'},
+  {e:'After midnight',t:'Після опівночі',tr:'Афтер мідна\'йт',c:'lesson'},
+  {e:'Stay at home',t:'Залишатися вдома',tr:'Стей ет хоум',c:'lesson'},
+  {e:'She really liked her job',t:'Їй дуже подобалася її робота',tr:'Ші ріелі лайкт хер джоб',c:'lesson'},
+  {e:'Have in common',t:'Мати спільне',tr:'Хев ін комон',c:'lesson'},
+
+  // C1 — рівень Advanced
+  {e:'Subtle',t:'Тонкий / ледь помітний',tr:'Сатл',c:'c1'},
+  {e:'Vague',t:'Розмитий / нечіткий',tr:'Вейґ',c:'c1'},
+  {e:'Superficial',t:'Поверхневий',tr:'Суперфішл',c:'c1'},
+  {e:'Sophisticated',t:'Вишуканий',tr:'Софістікейтід',c:'c1'},
+  {e:'Obsolete',t:'Застарілий',tr:'Обсоліт',c:'c1'},
+  {e:'Ambiguous',t:'Двозначний',tr:'Ембіґ\'юес',c:'c1'},
+  {e:'Inevitably',t:'Неминуче',tr:'Іневітеблі',c:'c1'},
+  {e:'Simultaneously',t:'Одночасно',tr:'Саймултейніеслі',c:'c1'},
+  {e:'Thoroughly',t:'Ретельно / до дрібниць',tr:'Сарелі',c:'c1'},
+  {e:'Astonishing',t:'Вражаючий / що шокує',tr:'Естонішінґ',c:'c1'},
+  {e:'Advocate',t:'Палко захищати (ідею)',tr:'Едвокет',c:'c1'},
+  {e:'Comply',t:'Відповідати правилам',tr:'Компла\'й',c:'c1'},
+  {e:'Diminish',t:'Зменшувати / знецінювати',tr:'Дімініш',c:'c1'},
+  {e:'Enhance',t:'Покращити / посилити',tr:'Інхенс',c:'c1'},
+  {e:'Evaluate',t:'Оцінити ситуацію',tr:'Івелюейт',c:'c1'},
+  {e:'Flourish',t:'Процвітати',tr:'Флариш',c:'c1'},
+  {e:'Implement',t:'Впровадити в життя',tr:'Імпліment',c:'c1'},
+  {e:'Neglect',t:'Забивати / ігнорувати',tr:'Ніґлект',c:'c1'},
+  {e:'Trigger',t:'Зачепити за живе',tr:'Тріґер',c:'c1'},
+  {e:'Abundant',t:'Рясний',tr:'Ебандент',c:'c1'},
+  {e:'Accurate',t:'Точний',tr:'Ек\'юрет',c:'c1'},
+  {e:'Advantageous',t:'Вигідний',tr:'Едвентейджес',c:'c1'},
+  {e:'Alleviate',t:'Полегшити',tr:'Елівіейт',c:'c1'},
+  {e:'Anticipate',t:'Передбачати',tr:'Ентісіпейт',c:'c1'},
+  {e:'Bewildered',t:'Спантеличений',tr:'Бівілдерд',c:'c1'},
+  {e:'Coherent',t:'Зв\'язний / логічний',tr:'Коухірент',c:'c1'},
+  {e:'Compelling',t:'Переконливий',tr:'Компелінґ',c:'c1'},
+  {e:'Contradict',t:'Суперечити',tr:'Контрадікт',c:'c1'},
+  {e:'Crucial',t:'Вирішальний',tr:'Крушл',c:'c1'},
+  {e:'Determine',t:'Визначати',tr:'Дітьормін',c:'c1'},
+  {e:'Dilemma',t:'Дилема',tr:'Ділема',c:'c1'},
+  {e:'Distinguish',t:'Розрізняти',tr:'Дістінґвіш',c:'c1'},
+  {e:'Elaborate',t:'Детально розвинути',tr:'Ілеборейт',c:'c1'},
+
+  // B2 — Upper-Intermediate (нові)
+  {e:'Gaslight',t:'Маніпулювати',tr:'Ґеслайт',c:'b2'},
+  {e:'Red flag',t:'Тривожний дзвіночок',tr:'Ред флеґ',c:'b2'},
+  {e:'Delusional',t:'Той, хто живе в ілюзіях',tr:'Ділужнл',c:'b2'},
+  {e:'Basically',t:'По суті / грубо кажучи',tr:'Бейсіклі',c:'b2'},
+  {e:'Accidentally',t:'Випадково',tr:'Ексідентлі',c:'b2'},
+  {e:'Apparently',t:'Судячи з усього',tr:'Епарентлі',c:'b2'},
+  {e:'Consequently',t:'Як наслідок',tr:'Консиквентлі',c:'b2'},
+  {e:'Fortunately',t:'На щастя',tr:'Форчунетлі',c:'b2'},
+  {e:'Hardly',t:'Навряд чи / ледве',tr:'Хардлі',c:'b2'},
+  {e:'Honestly',t:'Чесно кажучи',tr:'Оністлі',c:'b2'},
+  {e:'Accomplish',t:'Досягти / виконати',tr:'Екомпліш',c:'b2'},
+  {e:'Adjust',t:'Підлаштувати / адаптувати',tr:'Еджаст',c:'b2'},
+  {e:'Confront',t:'Йти на конфлікт',tr:'Конфрант',c:'b2'},
+  {e:'Exaggerate',t:'Перебільшувати',tr:'Іґзеджерейт',c:'b2'},
+  {e:'Hesitate',t:'Вагатися / тупити',tr:'Хезітейт',c:'b2'},
+  {e:'Involve',t:'Залучати / включати в себе',tr:'Інволв',c:'b2'},
+  {e:'Justify',t:'Виправдовувати',tr:'Джастіфай',c:'b2'},
+  {e:'Negotiate',t:'Вести переговори',tr:'Ніґоушіейт',c:'b2'},
+  {e:'Predict',t:'Прогнозувати / вангувати',tr:'Прідікт',c:'b2'},
+  {e:'Approach',t:'Підхід / наближатися',tr:'Епроуч',c:'b2'},
+  {e:'Aware',t:'Свідомий / поінформований',tr:'Евеа',c:'b2'},
+  {e:'Benefit',t:'Користь / вигода',tr:'Бенефіт',c:'b2'},
+  {e:'Challenge',t:'Виклик / складна задача',tr:'Челіндж',c:'b2'},
+  {e:'Commit',t:'Взяти на себе зобов\'язання',tr:'Коміт',c:'b2'},
+  {e:'Delay',t:'Затримка / відкладати',tr:'Ділей',c:'b2'},
+  {e:'Demand',t:'Попит / вимагати',tr:'Діманд',c:'b2'},
+  {e:'Desperate',t:'Відчайдушний',tr:'Десперет',c:'b2'},
+  {e:'Ensure',t:'Забезпечити / гарантувати',tr:'Іншуа',c:'b2'},
+  {e:'Evidence',t:'Докази',tr:'Евиденс',c:'b2'},
+  {e:'Frustrated',t:'Розчарований',tr:'Фрастрейтид',c:'b2'},
+  {e:'Gain',t:'Здобувати / отримувати',tr:'Ґейн',c:'b2'},
+  {e:'Guarantee',t:'Гарантувати',tr:'Ґерентi',c:'b2'},
+  {e:'Intention',t:'Намір',tr:'Інтеншн',c:'b2'},
+  {e:'Interrupt',t:'Перебивати',tr:'Інтерапт',c:'b2'},
+
+  // B1 — Intermediate (сленг та дієслова, нові)
+  {e:'Ghost',t:'Ігнорити / різко зникнути',tr:'Ґоуст',c:'b1'},
+  {e:'Rizz',t:'Харизма / вміння чіпляти',tr:'Риз',c:'b1'},
+  {e:'Obsessed',t:'Схиблений на чомусь',tr:'Обсест',c:'b1'},
+  {e:'Overrated',t:'Переоцінений',tr:'Оуверейтид',c:'b1'},
+  {e:'Underrated',t:'Недооцінений',tr:'Андерейтид',c:'b1'},
+  {e:'Vibe',t:'Атмосфера / настрій',tr:'Вайб',c:'b1'},
+  {e:'Cringe',t:'Крінж / сором',tr:'Кринж',c:'b1'},
+  {e:'Fake',t:'Фальшивий',tr:'Фейк',c:'b1'},
+  {e:'Hype',t:'Хайп / ажіотаж',tr:'Хайп',c:'b1'},
+  {e:'Mainstream',t:'Те, що роблять усі',tr:'Мейнстрім',c:'b1'},
+  {e:'Toxic',t:'Токсичний',tr:'Токсик',c:'b1'},
+  {e:'Burnout',t:'Вигорання',tr:'Бьорнаут',c:'b1'},
+  {e:'Deal',t:'Угода / домовленість',tr:'Діл',c:'b1'},
+  {e:'Doubt',t:'Сумнів / сумніватися',tr:'Даут',c:'b1'},
+  {e:'Focus',t:'Фокусуватися',tr:'Фоукес',c:'b1'},
+  {e:'Handle',t:'Розрулити / впоратися',tr:'Хендл',c:'b1'},
+  {e:'Issue',t:'Проблема / таска',tr:'Ішу',c:'b1'},
+  {e:'Notice',t:'Помітити',tr:'Ноутис',c:'b1'},
+  {e:'Realize',t:'Чітко усвідомити',tr:'Ріалайз',c:'b1'},
+  {e:'Solve',t:'Вирішити (проблему)',tr:'Солв',c:'b1'},
+  {e:'Accept',t:'Приймати / погоджуватися',tr:'Ексепт',c:'b1'},
+  {e:'Achieve',t:'Досягати (мети)',tr:'Ечів',c:'b1'},
+  {e:'Admit',t:'Визнавати',tr:'Едміт',c:'b1'},
+  {e:'Affect',t:'Впливати',tr:'Ефект',c:'b1'},
+  {e:'Appreciate',t:'Цінувати',tr:'Епрішіейт',c:'b1'},
+  {e:'Assume',t:'Припускати',tr:'Ес\'юм',c:'b1'},
+  {e:'Blame',t:'Звинувачувати',tr:'Блейм',c:'b1'},
+  {e:'Bother',t:'Турбувати(ся) / напрягатися',tr:'Бозер',c:'b1'},
+  {e:'Compare',t:'Порівнювати',tr:'Компеа',c:'b1'},
+  {e:'Confirm',t:'Підтверджувати',tr:'Конфьорм',c:'b1'},
+  {e:'Convince',t:'Переконувати',tr:'Конвінс',c:'b1'},
+  {e:'Deny',t:'Заперечувати',tr:'Дінай',c:'b1'},
+  {e:'Deserve',t:'Заслуговувати',tr:'Дізьорв',c:'b1'},
+  {e:'Disappear',t:'Зникати',tr:'Дісепіа',c:'b1'},
+
+  // A2 — Pre-Intermediate (нові)
+  {e:'Postpone',t:'Відкласти на потім',tr:'Поустпоун',c:'a2'},
+  {e:'Avoid',t:'Уникати / петляти',tr:'Евойд',c:'a2'},
+  {e:'Cancel',t:'Скасувати',tr:'Кенсл',c:'a2'},
+  {e:'Improve',t:'Покращити',tr:'Імпрув',c:'a2'},
+  {e:'Manage',t:'Впоратися / керувати',tr:'Менедж',c:'a2'},
+  {e:'Mind',t:'Бути проти',tr:'Майнд',c:'a2'},
+  {e:'Expect',t:'Очікувати',tr:'Іксспект',c:'a2'},
+  {e:'Remind',t:'Нагадати',tr:'Рімайнд',c:'a2'},
+  {e:'Waste',t:'Витрачати марно (час, гроші)',tr:'Вейст',c:'a2'},
+  {e:'Afford',t:'Дозволити собі фінансово',tr:'Афорд',c:'a2'},
+  {e:'Anxious',t:'Тривожний / стурбований',tr:'Енкшес',c:'a2'},
+  {e:'Crowded',t:'Забитий людьми',tr:'Краудид',c:'a2'},
+  {e:'Disappointed',t:'Розчарований',tr:'Дісепойтид',c:'a2'},
+  {e:'Grateful',t:'Вдячний',tr:'Ґрейтфл',c:'a2'},
+  {e:'Jealous',t:'Ревнивий / заздрісний',tr:'Джелес',c:'a2'},
+  {e:'Lazy',t:'Лінивий',tr:'Лейзі',c:'a2'},
+  {e:'Proud',t:'Гордий',tr:'Прауд',c:'a2'},
+  {e:'Tired',t:'Втомлений',tr:'Таєрд',c:'a2'},
+  {e:'Agree',t:'Погоджуватися',tr:'Еґрі',c:'a2'},
+  {e:'Allow',t:'Дозволяти',tr:'Елау',c:'a2'},
+  {e:'Argue',t:'Сперечатися',tr:'Арґ\'ю',c:'a2'},
+  {e:'Believe',t:'Вірити',tr:'Білів',c:'a2'},
+  {e:'Decide',t:'Вирішити',tr:'Дісайд',c:'a2'},
+  {e:'Depend',t:'Залежати',tr:'Діпенд',c:'a2'},
+  {e:'Describe',t:'Описувати',tr:'Діскрайб',c:'a2'},
+  {e:'Discuss',t:'Обговорювати',tr:'Діскас',c:'a2'},
+  {e:'Encourage',t:'Підбадьорювати',tr:'Інкаридж',c:'a2'},
+  {e:'Follow',t:'Слідкувати / фоловити',tr:'Фолоу',c:'a2'},
+  {e:'Guess',t:'Вгадувати / вважати',tr:'Ґес',c:'a2'},
+  {e:'Happen',t:'Ставатися / відбуватися',tr:'Хепен',c:'a2'},
+  {e:'Imagine',t:'Уявляти',tr:'Імеджин',c:'a2'},
+  {e:'Invite',t:'Запрошувати',tr:'Інвайт',c:'a2'},
+  {e:'Offer',t:'Пропонувати',tr:'Офер',c:'a2'},
+  {e:'Promise',t:'Обіцяти',tr:'Промис',c:'a2'},
+
+  // A1 — Elementary (нові)
+  {e:'Chill',t:'Відпочивати / розслаблятися',tr:'Чил',c:'a1'},
+  {e:'Stuff',t:'Речі / штуки / хлам',tr:'Стаф',c:'a1'},
+  {e:'Huge',t:'Величезний',tr:'Х\'юдж',c:'a1'},
+  {e:'Awesome',t:'Круто / офігенно',tr:'Осам',c:'a1'},
+  {e:'Wrong',t:'Неправильний / не той',tr:'Ронґ',c:'a1'},
+  {e:'Check',t:'Перевірити',tr:'Чек',c:'a1'},
+  {e:'Single',t:'Без пари / один',tr:'Сінґл',c:'a1'},
+  {e:'App',t:'Додаток на телефоні',tr:'Еп',c:'a1'},
+  {e:'Maybe',t:'Можливо',tr:'Мейбі',c:'a1'},
+  {e:'Sure',t:'Впевнений / авжеж',tr:'Шуа',c:'a1'},
+  {e:'Busy',t:'Зайнятий',tr:'Бізі',c:'a1'},
+  {e:'Cheap',t:'Дешевий',tr:'Чіп',c:'a1'},
+  {e:'Expensive',t:'Дорогий',tr:'Ікспенсів',c:'a1'},
+  {e:'Free',t:'Вільний / безкоштовний',tr:'Фрі',c:'a1'},
+  {e:'Late',t:'Пізно / той, що запізнюється',tr:'Лейт',c:'a1'},
+  {e:'Ready',t:'Готовий',tr:'Реді',c:'a1'},
+  {e:'Join',t:'Приєднатися',tr:'Джойн',c:'a1'},
+  {e:'Care',t:'Турбуватися / зважати',tr:'Кеа',c:'a1'},
+  {e:'Change',t:'Змінювати / решта (гроші)',tr:'Чейндж',c:'a1'},
+  {e:'Choose',t:'Обирати',tr:'Чуз',c:'a1'},
+  {e:'Close',t:'Зачиняти / близький',tr:'Клоуз',c:'a1'},
+  {e:'Create',t:'Створювати',tr:'Кріейт',c:'a1'},
+  {e:'Cry',t:'Плакати / кричати',tr:'Край',c:'a1'},
+  {e:'Cut',t:'Різати / скорочувати',tr:'Кат',c:'a1'},
+  {e:'Drop',t:'Впустити / кинути / дропнути',tr:'Дроп',c:'a1'},
+  {e:'Enjoy',t:'Кайфувати / насолоджуватися',tr:'Інджой',c:'a1'},
+  {e:'Explain',t:'Пояснювати',tr:'Ікспльейн',c:'a1'},
+  {e:'Feel',t:'Почуватися',tr:'Філ',c:'a1'},
+  {e:'Find',t:'Знаходити',tr:'Файнд',c:'a1'},
+  {e:'Forget',t:'Забувати',tr:'Форґет',c:'a1'},
+  {e:'Hate',t:'Ненавидіти',tr:'Хейт',c:'a1'},
+  {e:'Hear',t:'Чути',tr:'Хіа',c:'a1'},
+  {e:'Meet',t:'Зустрічати / знайомитися',tr:'Міт',c:'a1'},
+  {e:'Need',t:'Потребувати',tr:'Нід',c:'a1'},
+
+  // АНТОНІМИ — прикметники з протилежностями
+  {e:'Beautiful',t:'Красивий',tr:'Б\'ютіфул',c:'antonyms',ex:'She has a beautiful smile.',exT:'У неї красива усмішка.'},
+  {e:'Ugly',t:'Потворний',tr:'Аглі',c:'antonyms',ex:'That old building looks ugly.',exT:'Та стара будівля виглядає потворно.'},
+  {e:'Big',t:'Великий',tr:'Біґ',c:'antonyms',ex:'They live in a big house.',exT:'Вони живуть у великому будинку.'},
+  {e:'Clean',t:'Чистий',tr:'Клін',c:'antonyms',ex:'Keep your room clean.',exT:'Тримай свою кімнату чистою.'},
+  {e:'Dirty',t:'Брудний',tr:'Дьорті',c:'antonyms',ex:'My shoes are dirty after the walk.',exT:'Мої туфлі брудні після прогулянки.'},
+  {e:'Easy',t:'Легкий',tr:'Ізі',c:'antonyms',ex:'This test was easy for me.',exT:'Цей тест був для мене легким.'},
+  {e:'Fast',t:'Швидкий',tr:'Фаст',c:'antonyms',ex:'He drives a very fast car.',exT:'Він водить дуже швидку машину.'},
+  {e:'Slow',t:'Повільний',tr:'Слоу',c:'antonyms',ex:'The internet is too slow today.',exT:'Інтернет сьогодні занадто повільний.'},
+  {e:'Full',t:'Повний',tr:'Фул',c:'antonyms',ex:'My stomach is full after dinner.',exT:'Мій живіт повний після вечері.'},
+  {e:'Empty',t:'Порожній',tr:'Емпті',c:'antonyms',ex:'The bottle is empty now.',exT:'Бутилка тепер порожня.'},
+  {e:'High',t:'Високий',tr:'Хай',c:'antonyms',ex:'The prices are very high this year.',exT:'Ціни цього року дуже високі.'},
+  {e:'Low',t:'Низький',tr:'Лоу',c:'antonyms',ex:'The temperature is low in winter.',exT:'Взимку температура низька.'},
+  {e:'Light',t:'Світлий',tr:'Лайт',c:'antonyms',ex:'I like light colors for my room.',exT:'Мені подобаються світлі кольори для кімнати.'},
+  {e:'Dark',t:'Темний',tr:'Дарк',c:'antonyms',ex:'It gets dark early in winter.',exT:'Взимку темніє рано.'},
+  {e:'Young',t:'Молодий',tr:'Янг',c:'antonyms',ex:'My sister is young and energetic.',exT:'Моя сестра молода й енергійна.'},
+  {e:'Rich',t:'Багатий',tr:'Рич',c:'antonyms',ex:'He became rich after selling his company.',exT:'Він став багатим після продажу компанії.'},
+  {e:'Poor',t:'Бідний',tr:'Пуа',c:'antonyms',ex:'They grew up in a poor family.',exT:'Вони виросли в бідній родині.'},
+  {e:'Safe',t:'Безпечний',tr:'Сейф',c:'antonyms',ex:'This neighborhood is very safe.',exT:'Цей район дуже безпечний.'},
+  {e:'Dangerous',t:'Небезпечний',tr:'Дейнджерес',c:'antonyms',ex:'Swimming there is dangerous.',exT:'Плавати там небезпечно.'},
+  {e:'Strong',t:'Сильний',tr:'Стронг',c:'antonyms',ex:'You need to be strong for this job.',exT:'Тобі потрібно бути сильним для цієї роботи.'},
+  {e:'Weak',t:'Слабкий',tr:'Вік',c:'antonyms',ex:'I felt weak after being sick.',exT:'Я почувався слабким після хвороби.'},
+  {e:'Tall',t:'Високий (зріст)',tr:'Тол',c:'antonyms',ex:'My brother is very tall.',exT:'Мій брат дуже високий.'},
+
+  // СЛУЖБОВІ СЛОВА — артиклі, прийменники, сполучники
+  {e:'The',t:'Той самий (артикль)',tr:'Зе',c:'function',ex:'The book on the table is mine.',exT:'Книга на столі моя.'},
+  {e:'A / An',t:'Якийсь',tr:'Е',c:'function',ex:'I saw a cat in the garden.',exT:'Я бачив кота в саду.'},
+  {e:'Of',t:'Належність',tr:'Ов',c:'function',ex:'This is the door of my house.',exT:'Це двері мого будинку.'},
+  {e:'To',t:'Кудись',tr:'Ту',c:'function',ex:'I\'m going to the store.',exT:'Я йду до магазину.'},
+  {e:'In',t:'Всередині',tr:'Ін',c:'function',ex:'The keys are in my bag.',exT:'Ключі в моїй сумці.'},
+  {e:'For',t:'Для',tr:'Фор',c:'function',ex:'This gift is for you.',exT:'Цей подарунок для тебе.'},
+  {e:'On',t:'На поверхні',tr:'Он',c:'function',ex:'The cup is on the table.',exT:'Чашка на столі.'},
+  {e:'With',t:'З кимось',tr:'Віз',c:'function',ex:'I went to the park with my friend.',exT:'Я ходив у парк з другом.'},
+  {e:'At',t:'В точці',tr:'Ет',c:'function',ex:'Let\'s meet at the cafe.',exT:'Зустрінемось у кафе.'},
+  {e:'By',t:'Кимось / біля',tr:'Бай',c:'function',ex:'This book was written by my favorite author.',exT:'Цю книгу написав мій улюблений автор.'},
+  {e:'From',t:'Звідкись',tr:'Фром',c:'function',ex:'She is from Ukraine.',exT:'Вона з України.'},
+  {e:'About',t:'Про щось',tr:'Ебаут',c:'function',ex:'We talked about our plans.',exT:'Ми говорили про наші плани.'},
+  {e:'After',t:'Після',tr:'Афтер',c:'function',ex:'I\'ll call you after work.',exT:'Я подзвоню тобі після роботи.'},
+  {e:'And',t:'І',tr:'Енд',c:'function',ex:'I like tea and coffee.',exT:'Мені подобається чай і кава.'},
+  {e:'But',t:'Але',tr:'Бат',c:'function',ex:'I wanted to go, but I was tired.',exT:'Я хотів піти, але був втомлений.'},
+  {e:'Or',t:'Або',tr:'Ор',c:'function',ex:'Do you want tea or coffee?',exT:'Хочеш чай чи каву?'},
+  {e:'Because',t:'Тому що',tr:'Бікоз',c:'function',ex:'I stayed home because it was raining.',exT:'Я залишився вдома, бо йшов дощ.'},
+
+  // ДІЄСЛОВА (нові з таблиці readyto)
+  {e:'Go',t:'Йти',tr:'Ґоу',c:'verbs2',ex:'I go to school every day.',exT:'Я ходжу до школи щодня.'},
+  {e:'Know',t:'Знати',tr:'Ноу',c:'verbs2',ex:'I know the answer.',exT:'Я знаю відповідь.'},
+  {e:'Take',t:'Брати',tr:'Тейк',c:'verbs2',ex:'Take this umbrella with you.',exT:'Візьми цю парасолю з собою.'},
+  {e:'See',t:'Бачити',tr:'Сі',c:'verbs2',ex:'I can see the mountains from here.',exT:'Звідси я можу бачити гори.'},
+  {e:'Come',t:'Приходити',tr:'Кам',c:'verbs2',ex:'Can you come to my party?',exT:'Ти можеш прийти на мою вечірку?'},
+  {e:'Think',t:'Думати',tr:'Сінк',c:'verbs2',ex:'I think it will rain tomorrow.',exT:'Я думаю, завтра буде дощ.'},
+  {e:'Want',t:'Хотіти',tr:'Вонт',c:'verbs2',ex:'I want to learn English.',exT:'Я хочу вивчити англійську.'},
+  {e:'Give',t:'Давати',tr:'Ґів',c:'verbs2',ex:'Can you give me your phone number?',exT:'Можеш дати мені свій номер телефону?'},
+  {e:'Use',t:'Використовувати',tr:'Юз',c:'verbs2',ex:'I use my phone every day.',exT:'Я використовую телефон щодня.'},
+  {e:'Find',t:'Знаходити',tr:'Файнд',c:'verbs2',ex:'I can\'t find my keys.',exT:'Я не можу знайти свої ключі.'},
+  {e:'Tell',t:'Розповідати',tr:'Тел',c:'verbs2',ex:'Tell me about your trip.',exT:'Розкажи мені про свою подорож.'},
+  {e:'Ask',t:'Питати',tr:'Аск',c:'verbs2',ex:'Can I ask you a question?',exT:'Можу я задати тобі питання?'},
+  {e:'Work',t:'Працювати',tr:'Ворк',c:'verbs2',ex:'I work from home.',exT:'Я працюю з дому.'},
+  {e:'Paint',t:'Малювати (фарбами)',tr:'Пейнт',c:'verbs2',ex:'She loves to paint landscapes.',exT:'Вона любить малювати пейзажі.'},
+  {e:'Draw',t:'Малювати (олівцем)',tr:'Дро',c:'verbs2',ex:'My son can draw very well.',exT:'Мій син дуже добре малює.'},
+  {e:'Call',t:'Викликати / дзвонити',tr:'Кол',c:'verbs2',ex:'I\'ll call you tonight.',exT:'Я подзвоню тобі ввечері.'},
+  {e:'Sing',t:'Співати',tr:'Сінг',c:'verbs2',ex:'She sings beautifully.',exT:'Вона прекрасно співає.'},
+  {e:'Hear',t:'Чути',tr:'Хіа',c:'verbs2',ex:'I can hear music outside.',exT:'Я чую музику зовні.'},
+  {e:'Meet',t:'Зустрічати',tr:'Міт',c:'verbs2',ex:'Nice to meet you.',exT:'Приємно з тобою познайомитися.'},
+  {e:'Look for',t:'Шукати',tr:'Лук фор',c:'verbs2',ex:'I\'m looking for my glasses.',exT:'Я шукаю свої окуляри.'},
+  {e:'Buy',t:'Купувати',tr:'Бай',c:'verbs2',ex:'I need to buy some milk.',exT:'Мені потрібно купити молока.'},
+  {e:'Leave',t:'Залишати / йти',tr:'Ліів',c:'verbs2',ex:'The train leaves at 9 am.',exT:'Поїзд відходить у 9 ранку.'},
+  {e:'Talk',t:'Розмовляти',tr:'Ток',c:'verbs2',ex:'We talked for hours.',exT:'Ми розмовляли годинами.'},
+  {e:'Wait',t:'Чекати',tr:'Вейт',c:'verbs2',ex:'Please wait for me here.',exT:'Будь ласка, почекай мене тут.'},
+  {e:'Remember',t:'Пам\'ятати',tr:'Рімембер',c:'verbs2',ex:'I remember my childhood very well.',exT:'Я дуже добре пам\'ятаю своє дитинство.'},
+  {e:'Help',t:'Допомагати',tr:'Хелп',c:'verbs2',ex:'Can you help me with this?',exT:'Можеш допомогти мені з цим?'},
+  {e:'Swim',t:'Плавати',tr:'Свім',c:'verbs2',ex:'We swim in the lake every summer.',exT:'Ми плаваємо в озері кожного літа.'},
+  {e:'Forget',t:'Забувати',tr:'Форгет',c:'verbs2',ex:'Don\'t forget your umbrella.',exT:'Не забудь свою парасолю.'},
+  {e:'Send',t:'Надсилати',tr:'Сенд',c:'verbs2',ex:'I\'ll send you the photos later.',exT:'Я надішлю тобі фото пізніше.'},
+  {e:'Dance',t:'Танцювати',tr:'Денс',c:'verbs2',ex:'They danced all night.',exT:'Вони танцювали всю ніч.'},
+  {e:'Run',t:'Бігти',tr:'Ран',c:'verbs2',ex:'I run every morning before work.',exT:'Я бігаю кожного ранку перед роботою.'},
+
+  // ЕМОЦІЇ/СТАНИ (новий блок)
+  {e:'Happy',t:'Щасливий',tr:'Хепі',c:'emotions2',ex:'I feel happy when I\'m with my family.',exT:'Я почуваюся щасливим, коли я з родиною.'},
+  {e:'Hungry',t:'Голодний',tr:'Хангрі',c:'emotions2',ex:'I\'m hungry, let\'s eat something.',exT:'Я голодний, давай щось з\'їмо.'},
+  {e:'Thirsty',t:'Спраглий',tr:'Сьорсті',c:'emotions2',ex:'I\'m thirsty, can I have some water?',exT:'Я хочу пити, можна мені води?'},
+  {e:'Worried',t:'Стурбований',tr:'Ворід',c:'emotions2',ex:'She looked worried about the exam.',exT:'Вона виглядала стурбованою через екзамен.'},
+  {e:'Stressed',t:'У стресі',tr:'Стрест',c:'emotions2',ex:'I\'ve been stressed about work lately.',exT:'Останнім часом я в стресі через роботу.'},
+  {e:'Bored',t:'Знуджений',tr:'Бод',c:'emotions2',ex:'The kids were bored on the long trip.',exT:'Дітям було нудно у довгій поїздці.'},
+  {e:'Angry',t:'Злий',tr:'Енгрі',c:'emotions2',ex:'He got angry when he lost his keys.',exT:'Він розсердився, коли загубив ключі.'},
+  {e:'Frightened',t:'Наляканий',tr:'Фрайтенд',c:'emotions2',ex:'She was frightened by the loud noise.',exT:'Вона була налякана голосним звуком.'},
+  {e:'Sad',t:'Сумний',tr:'Сед',c:'emotions2',ex:'I felt sad after the movie ended.',exT:'Мені стало сумно після закінчення фільму.'},
+  {e:'Excited',t:'У захваті',tr:'Іксайтид',c:'emotions2',ex:'We are excited about our vacation.',exT:'Ми у захваті від нашої відпустки.'},
+  {e:'Relaxed',t:'Розслаблений',tr:'Рілекст',c:'emotions2',ex:'I feel relaxed after a hot bath.',exT:'Я почуваюся розслабленим після гарячої ванни.'},
+  {e:'Comfortable',t:'Зручно',tr:'Камфтебл',c:'emotions2',ex:'This chair is very comfortable.',exT:'Це крісло дуже зручне.'},
+  {e:'Calm',t:'Спокійний',tr:'Кам',c:'emotions2',ex:'Try to stay calm during the interview.',exT:'Намагайся залишатися спокійним під час інтервʼю.'},
+  {e:'Surprised',t:'Здивований',tr:'Серпрайзд',c:'emotions2',ex:'I was surprised by the news.',exT:'Я був здивований цими новинами.'},
+  {e:'Sleepy',t:'Сонний',tr:'Слі пі',c:'emotions2',ex:'I feel sleepy after lunch.',exT:'Я почуваюся сонним після обіду.'},
+  {e:'Confused',t:'Розгублений',tr:'Конфьюзд',c:'emotions2',ex:'I was confused by his explanation.',exT:'Я був розгублений через його пояснення.'},
+  {e:'Hopeful',t:'Сповнений надій',tr:'Хоупфул',c:'emotions2',ex:'I\'m hopeful about the future.',exT:'Я сповнений надій щодо майбутнього.'},
+  {e:'Inspired',t:'Натхненний',tr:'Інспайерд',c:'emotions2',ex:'Her speech inspired everyone.',exT:'Її промова надихнула всіх.'},
+  {e:'Serious',t:'Серйозний',tr:'Сіріес',c:'emotions2',ex:'This is a serious problem.',exT:'Це серйозна проблема.'},
+  {e:'Pleased',t:'Задоволений',tr:'Пліізд',c:'emotions2',ex:'I\'m pleased with the results.',exT:'Я задоволений результатами.'},
+  {e:'Awake',t:'Бадьорий',tr:'Евейк',c:'emotions2',ex:'I stayed awake all night studying.',exT:'Я не спав всю ніч, навчаючись.'},
+  {e:'Content',t:'Задоволений',tr:'Контент',c:'emotions2',ex:'She seems content with her life.',exT:'Вона здається задоволеною своїм життям.'},
+  {e:'Gloomy',t:'Похмурий',tr:'Глумі',c:'emotions2',ex:'The weather is gloomy today.',exT:'Погода сьогодні похмура.'},
+  {e:'Shy',t:'Сором\'язливий',tr:'Шай',c:'emotions2',ex:'My little brother is very shy.',exT:'Мій маленький брат дуже сором\'язливий.'},
+  {e:'Energetic',t:'Енергійний',tr:'Енедже тик',c:'emotions2',ex:'Children are usually very energetic.',exT:'Діти зазвичай дуже енергійні.'},
+
+  // ЧАС (слова про час)
+  {e:'In time',t:'Вчасно',tr:'Ін тайм',c:'timewords',ex:'We arrived just in time for the show.',exT:'Ми приїхали саме вчасно на шоу.'},
+  {e:'Long ago',t:'Давно',tr:'Лонг е-ґоу',c:'timewords',ex:'This happened long ago.',exT:'Це сталося давно.'},
+  {e:'Right away',t:'Негайно',tr:'Райт е-вей',c:'timewords',ex:'Call me right away if anything happens.',exT:'Подзвони мені негайно, якщо щось станеться.'},
+  {e:'Not long ago',t:'Нещодавно',tr:'Нот лонг е-ґоу',c:'timewords',ex:'I saw her not long ago.',exT:'Я бачив її нещодавно.'},
+  {e:'Then',t:'Тоді',tr:'Зен',c:'timewords',ex:'I was younger then.',exT:'Тоді я був молодшим.'},
+  {e:'Just',t:'Щойно',tr:'Джаст',c:'timewords',ex:'I just finished my homework.',exT:'Я щойно закінчив домашнє завдання.'},
+  {e:'In a week',t:'Через тиждень',tr:'Ін е вік',c:'timewords',ex:'We\'re going on vacation in a week.',exT:'Ми їдемо у відпустку через тиждень.'},
+  {e:'In a month',t:'Через місяць',tr:'Ін е манс',c:'timewords',ex:'The exam is in a month.',exT:'Екзамен через місяць.'},
+  {e:'In a year',t:'Через рік',tr:'Ін е йір',c:'timewords',ex:'We\'ll move to a new house in a year.',exT:'Ми переїдемо до нового будинку через рік.'},
+
+  // КІЛЬКІСТЬ-ОПИС
+  {e:'Many',t:'Багато (рахується)',tr:'Мені',c:'quantity',ex:'I have many friends in this city.',exT:'У мене багато друзів у цьому місті.'},
+  {e:'Much',t:'Багато (не рахується)',tr:'Мач',c:'quantity',ex:'I don\'t have much time today.',exT:'У мене сьогодні небагато часу.'},
+  {e:'More',t:'Більше',tr:'Мор',c:'quantity',ex:'Can I have more coffee, please?',exT:'Можна мені ще кави, будь ласка?'},
+  {e:'Most',t:'Найбільше',tr:'Моуст',c:'quantity',ex:'Most people enjoyed the party.',exT:'Більшості людей сподобалась вечірка.'},
+  {e:'First',t:'Перший',tr:'Ферст',c:'quantity',ex:'This is the first time I\'ve been here.',exT:'Це перший раз, коли я тут.'},
+  {e:'Last',t:'Останній',tr:'Ласт',c:'quantity',ex:'This is my last day at work.',exT:'Це мій останній день на роботі.'},
+  {e:'Great',t:'Класний / великий',tr:'Грейт',c:'quantity',ex:'We had a great time at the beach.',exT:'Ми чудово провели час на пляжі.'},
+
+  // ПИТАЛЬНІ СЛОВА / DEMONSTRATIVES
+  {e:'Which',t:'Який',tr:'Віч',c:'questions',ex:'Which color do you prefer?',exT:'Який колір ти віддаєш перевагу?'},
+  {e:'Where',t:'Де',tr:'Веа',c:'questions',ex:'Where do you live?',exT:'Де ти живеш?'},
+  {e:'How',t:'Як',tr:'Хау',c:'questions',ex:'How do you make this dish?',exT:'Як ти готуєш цю страву?'},
+  {e:'Why',t:'Чому',tr:'Вай',c:'questions',ex:'Why are you so happy today?',exT:'Чому ти такий щасливий сьогодні?'},
+  {e:'This',t:'Цей',tr:'Зіс',c:'questions',ex:'This is my favorite book.',exT:'Це моя улюблена книга.'},
+  {e:'That',t:'Той',tr:'Зет',c:'questions',ex:'That house belongs to my uncle.',exT:'Той будинок належить моєму дядьку.'},
+  {e:'These',t:'Ці',tr:'Зіз',c:'questions',ex:'These shoes are too small for me.',exT:'Ці туфлі для мене занадто малі.'},
+  {e:'Those',t:'Ті',tr:'Зоуз',c:'questions',ex:'Those mountains are beautiful.',exT:'Ті гори прекрасні.'},
+
+  // РОЗМОВНІ ФРАЗИ (нові)
+  {e:'Same here',t:'Те саме',tr:'Сейм хіа',c:'phrases2',ex:'"I love pizza." "Same here!"',exT:'«Я люблю піцу». «Я теж!»'},
+  {e:'I get it',t:'Я зрозумів',tr:'Ай гет іт',c:'phrases2',ex:'Oh, I get it now, thanks for explaining.',exT:'О, я тепер зрозумів, дякую за пояснення.'},
+  {e:'No way',t:'Не може бути',tr:'Ноу вей',c:'phrases2',ex:'No way! You won the lottery?',exT:'Не може бути! Ти виграв у лотерею?'},
+  {e:'Count me out',t:'Без мене',tr:'Каунт мі аут',c:'phrases2',ex:'If you\'re going skydiving, count me out.',exT:'Якщо ви йдете на стрибки з парашутом, без мене.'},
+  {e:'So do I',t:'Я теж',tr:'Соу ду ай',c:'phrases2',ex:'"I want some coffee." "So do I."',exT:'«Я хочу кави». «Я теж».'},
+  {e:'No hard feelings',t:'Без образ',tr:'Ноу хард філінгс',c:'phrases2',ex:'No hard feelings, but I disagree with you.',exT:'Без образ, але я з тобою не згоден.'},
+  {e:'Never mind',t:'Забий',tr:'Невер майнд',c:'phrases2',ex:'Never mind, it\'s not important.',exT:'Забий, це не важливо.'},
+  {e:'Excuse me for a minute',t:'Я на хвилинку',tr:'Екскʼюз мі фор е мінит',c:'phrases2',ex:'Excuse me for a minute, I need to take this call.',exT:'Я на хвилинку, мені потрібно прийняти цей дзвінок.'},
+  {e:'Don\'t be silly',t:'Не будь дурним',tr:'Доунт бі сілі',c:'phrases2',ex:'Don\'t be silly, of course I\'ll help you.',exT:'Не будь дурним, звісно я тобі допоможу.'},
+  {e:'How\'s it going',t:'Як справи',tr:'Хауз іт ґоуінг',c:'phrases2',ex:'Hey, how\'s it going these days?',exT:'Привіт, як справи останнім часом?'},
+  {e:'I\'m down',t:'Я згоден',tr:'Айм даун',c:'phrases2',ex:'Want to go to the movies? I\'m down.',exT:'Хочеш піти в кіно? Я згоден.'},
+  {e:'My bad',t:'Мій косяк',tr:'Май бед',c:'phrases2',ex:'My bad, I forgot to call you back.',exT:'Мій косяк, я забув передзвонити тобі.'},
+  {e:'No biggie',t:'Без проблем',tr:'Ноу біґі',c:'phrases2',ex:'It\'s no biggie, we can reschedule.',exT:'Це без проблем, ми можемо перенести.'},
+  {e:'I\'m beat',t:'Я дуже втомився',tr:'Айм біт',c:'phrases2',ex:'I\'m beat after that long workout.',exT:'Я дуже втомився після того довгого тренування.'},
+  {e:'Give me a shout',t:'Дай знати',tr:'Ґів мі е шаут',c:'phrases2',ex:'Give me a shout when you arrive.',exT:'Дай знати, коли приїдеш.'},
+  {e:'It\'s on me',t:'Я плачу',tr:'Іts он мі',c:'phrases2',ex:'Don\'t worry about the bill, it\'s on me.',exT:'Не турбуйся про рахунок, я плачу.'},
+  {e:'Catch you later',t:'Побачимось',tr:'Кеч ю лейтер',c:'phrases2',ex:'Catch you later, I have to run.',exT:'Побачимось, мені треба бігти.'},
+  {e:'I\'m off',t:'Я пішов',tr:'Айм оф',c:'phrases2',ex:'It\'s getting late, I\'m off.',exT:'Стає пізно, я пішов.'},
+  {e:'Keep me posted',t:'Тримай в курсі',tr:'Кіп мі поустед',c:'phrases2',ex:'Keep me posted on how the project goes.',exT:'Тримай мене в курсі того, як просувається проєкт.'},
+  {e:'Not a clue',t:'Не маю поняття',tr:'Нот е клу',c:'phrases2',ex:'Where is he? Not a clue.',exT:'Де він? Не маю поняття.'},
+  {e:'You bet',t:'Ще б пак',tr:'Ю бет',c:'phrases2',ex:'"Are you coming to the party?" "You bet!"',exT:'«Ти йдеш на вечірку?» «Ще б пак!»'},
+  {e:'Fair enough',t:'Справедливо',tr:'Феар інаф',c:'phrases2',ex:'Fair enough, I understand your point.',exT:'Справедливо, я розумію твою думку.'},
+  {e:'Whatever',t:'Та байдуже',tr:'Вотевер',c:'phrases2',ex:'"It might rain." "Whatever, let\'s go anyway."',exT:'«Може піти дощ». «Та байдуже, ходімо все одно».'},
+  {e:'You made my day',t:'Ти зробив мій день',tr:'Ю мейд май дей',c:'phrases2',ex:'Thank you for the gift, you made my day!',exT:'Дякую за подарунок, ти зробив мій день!'},
+  {e:'Keep the change',t:'Решту собі',tr:'Кіп зе чейндж',c:'phrases2',ex:'Here\'s 20 dollars, keep the change.',exT:'Ось 20 доларів, решту собі.'},
+  {e:'My pleasure',t:'З радістю',tr:'Май плежер',c:'phrases2',ex:'"Thank you for your help." "My pleasure."',exT:'«Дякую за твою допомогу». «З радістю».'},
+  {e:'I\'m with you',t:'Я з тобою',tr:'Айм віз ю',c:'phrases2',ex:'Whatever you decide, I\'m with you.',exT:'Що б ти не вирішив, я з тобою.'},
+  {e:'Feel better',t:'Одужуй',tr:'Філ беттер',c:'phrases2',ex:'I heard you\'re sick, feel better soon!',exT:'Чула, що ти хворієш, швидко одужуй!'},
+  {e:'I guess',t:'Мабуть',tr:'Ай ґес',c:'phrases2',ex:'I guess we should leave now.',exT:'Мабуть, нам слід йти зараз.'},
+  {e:'I suppose',t:'Припускаю',tr:'Ай сапоуз',c:'phrases2',ex:'I suppose you\'re right about this.',exT:'Припускаю, що ти правий щодо цього.'},
+  {e:'I\'m sure',t:'Я впевнений',tr:'Айм шуа',c:'phrases2',ex:'I\'m sure everything will be fine.',exT:'Я впевнений, що все буде добре.'},
+
+  // СІМ'Я
+  {e:'Father',t:'Батько',tr:'Фазер',c:'family',ex:'My father is 50 years old.',exT:'Моєму батьку 50 років.'},
+  {e:'Mother',t:'Мати',tr:'Мазер',c:'family',ex:'My mother works in a school.',exT:'Моя мати працює в школі.'},
+  {e:'Brother',t:'Брат',tr:'Бразер',c:'family',ex:'I have one brother.',exT:'У мене є один брат.'},
+  {e:'Sister',t:'Сестра',tr:'Сістер',c:'family',ex:'My sister lives in Kyiv.',exT:'Моя сестра живе в Києві.'},
+  {e:'Daughter',t:'Донька',tr:'Дотер',c:'family',ex:'Their daughter is called Kate.',exT:'Їхню донечку звуть Кейт.'},
+  {e:'Son',t:'Син',tr:'Сан',c:'family',ex:'Their son is called Richard.',exT:'Їхнього сина звуть Річард.'},
+  {e:'Grandfather',t:'Дідусь',tr:'Ґрендфазер',c:'family',ex:'My grandfather is 75.',exT:'Моєму дідусеві 75.'},
+  {e:'Grandmother',t:'Бабуся',tr:'Ґрендмазер',c:'family',ex:'Jennifer is Richard\'s grandmother.',exT:'Дженіфер — бабуся Річарда.'},
+  {e:'Aunt',t:'Тітка',tr:'Аант',c:'family',ex:'Sue is Richard\'s aunt.',exT:'Сью — тітка Річарда.'},
+  {e:'Uncle',t:'Дядько',tr:'Анкл',c:'family',ex:'Nick is Richard\'s uncle.',exT:'Нік — дядько Річарда.'},
+  {e:'Nephew',t:'Племінник',tr:'Неф\'ю',c:'family',ex:'Richard is Sue\'s nephew.',exT:'Річард — племінник Сью.'},
+  {e:'Niece',t:'Племінниця',tr:'Ніс',c:'family',ex:'Kate is Sue\'s niece.',exT:'Кейт — племінниця Сью.'},
+  {e:'Cousin',t:'Двоюрідний брат / сестра',tr:'Казн',c:'family',ex:'Hugh is Richard\'s cousin.',exT:'Х\'ю — двоюрідний брат Річарда.'},
+  {e:'Wife',t:'Дружина',tr:'Вайф',c:'family',ex:'Emma is Richard\'s wife.',exT:'Емма — дружина Річарда.'},
+  {e:'Parents',t:'Батьки',tr:'Перентс',c:'family',ex:'My father and mother are my parents.',exT:'Мій батько і мати — мої батьки.'},
+  {e:'Grandparents',t:'Дідусь і бабуся',tr:'Ґрендперентс',c:'family',ex:'John and Jennifer are my grandparents.',exT:'Джон і Дженіфер — мої дідусь і бабуся.'},
+  {e:'Children',t:'Діти',tr:'Чілдрен',c:'family',ex:'My son and daughter are my children.',exT:'Мій син і донька — мої діти.'},
+  {e:'Couple',t:'Пара (подружжя)',tr:'Капл',c:'family',ex:'A husband and wife are a married couple.',exT:'Чоловік і дружина — це подружня пара.'},
+  {e:'Parents-in-law',t:'Свекор і свекруха / тесть і теща',tr:'Перентс ін лоо',c:'family',ex:'My wife\'s parents are my parents-in-law.',exT:'Батьки моєї дружини — мої тесть і теща.'},
+  {e:'Mother-in-law',t:'Свекруха / теща',tr:'Мазер ін лоо',c:'family',ex:'My wife\'s mother is my mother-in-law.',exT:'Мати моєї дружини — моя теща.'},
+  {e:'Sister-in-law',t:'Невістка / зовиця',tr:'Сістер ін лоо',c:'family',ex:'My husband\'s sister is my sister-in-law.',exT:'Сестра мого чоловіка — моя зовиця.'},
+  {e:'Stepfather',t:'Вітчим',tr:'Степфазер',c:'family',ex:'My mother\'s new husband is my stepfather.',exT:'Новий чоловік моєї матері — мій вітчим.'},
+  {e:'Stepmother',t:'Мачуха',tr:'Степмазер',c:'family',ex:'My father\'s new wife is my stepmother.',exT:'Нова дружина мого батька — моя мачуха.'},
+  {e:'Partner',t:'Партнер',tr:'Партнер',c:'family',ex:'The person I am in a relationship with is my partner.',exT:'Людина, з якою я в стосунках, — мій партнер.'},
+
+  // ЩОДЕННІ ДІЇ (DAILY ROUTINES)
+  {e:'Wake up at 7',t:'Прокидатися о 7:00',tr:'Вейк ап ет севен',c:'routines',ex:'I wake up at seven every day.',exT:'Я прокидаюся о сьомій щодня.'},
+  {e:'Have a shower',t:'Приймати душ',tr:'Хев е шауер',c:'routines',ex:'She has a shower in the morning.',exT:'Вона приймає душ зранку.'},
+  {e:'Get dressed',t:'Одягатися',tr:'Ґет дрест',c:'routines',ex:'I get dressed quickly.',exT:'Я швидко одягаюся.'},
+  {e:'Put on make-up',t:'Наносити макіяж',tr:'Пут он мейк-ап',c:'routines',ex:'She puts on make-up every morning.',exT:'Вона наносить макіяж щоранку.'},
+  {e:'Have a coffee',t:'Випити каву',tr:'Хев е кофі',c:'routines',ex:'I have a coffee before work.',exT:'Я випиваю каву перед роботою.'},
+  {e:'Check emails',t:'Перевіряти пошту',tr:'Чек і:мейлз',c:'routines',ex:'She checks emails at breakfast.',exT:'Вона перевіряє пошту під час сніданку.'},
+  {e:'Go to work by bus',t:'Їхати на роботу автобусом',tr:'Ґоу те ворк бай бас',c:'routines',ex:'I go to work by bus.',exT:'Я їжджу на роботу автобусом.'},
+  {e:'Get to work',t:'Добиратися до роботи',tr:'Ґет те ворк',c:'routines',ex:'She gets to work at 8.30.',exT:'Вона добирається до роботи о 8:30.'},
+  {e:'Start work at 8.30',t:'Починати роботу о 8:30',tr:'Старт ворк ет ейт-зерті',c:'routines',ex:'I start work at half past eight.',exT:'Я починаю роботу о пів на дев\'яту.'},
+  {e:'Have lunch at work',t:'Обідати на роботі',tr:'Хев ланч ет ворк',c:'routines',ex:'She has lunch at work every day.',exT:'Вона обідає на роботі щодня.'},
+  {e:'Finish work at 6.30',t:'Закінчувати роботу о 6:30',tr:'Фініш ворк ет сікс-зерті',c:'routines',ex:'I finish work at half past six.',exT:'Я закінчую роботу о пів на сьому.'},
+  {e:'Get home late',t:'Повертатися додому пізно',tr:'Ґет хоум лейт',c:'routines',ex:'She gets home late on weekdays.',exT:'Вона повертається додому пізно у будні.'},
+  {e:'Do the housework',t:'Робити домашні справи',tr:'Ду зе хаусворк',c:'routines',ex:'I do the housework in the evening.',exT:'Я роблю домашні справи увечері.'},
+  {e:'Go shopping',t:'Ходити по магазинах',tr:'Ґоу шопінг',c:'routines',ex:'I go shopping on Saturdays.',exT:'Я ходжу по магазинах по суботах.'},
+  {e:'Go to bed',t:'Лягати спати',tr:'Ґоу те бед',c:'routines',ex:'She goes to bed at midnight.',exT:'Вона лягає спати о півночі.'},
+  {e:'Get up at 8',t:'Вставати о 8:00',tr:'Ґет ап ет ейт',c:'routines',ex:'I get up at eight o\'clock.',exT:'Я встаю о восьмій годині.'},
+  {e:'Have a shave',t:'Голитися',tr:'Хев е шейв',c:'routines',ex:'He has a shave every morning.',exT:'Він голиться кожного ранку.'},
+  {e:'Walk to work',t:'Іти пішки на роботу',tr:'Вок те ворк',c:'routines',ex:'I walk to work, it\'s only 10 minutes.',exT:'Я йду на роботу пішки, це лише 10 хвилин.'},
+  {e:'Have breakfast',t:'Снідати',tr:'Хев брекфест',c:'routines',ex:'He has breakfast at home.',exT:'Він снідає вдома.'},
+  {e:'Go to Italian classes',t:'Ходити на курси італійської',tr:'Ґоу те ітелʼєн класіз',c:'routines',ex:'I go to Italian classes on Tuesdays.',exT:'Я ходжу на курси італійської по вівторках.'},
+  {e:'See friends',t:'Зустрічатися з друзями',tr:'Сі френдз',c:'routines',ex:'I see friends in the evenings.',exT:'Я зустрічаюся з друзями ввечері.'},
+  {e:'Relax',t:'Відпочивати',tr:'Рілакс',c:'routines',ex:'He relaxes after dinner.',exT:'Він відпочиває після вечері.'},
+  {e:'Make dinner',t:'Готувати вечерю',tr:'Мейк дінер',c:'routines',ex:'I make dinner at home.',exT:'Я готую вечерю вдома.'},
+  {e:'Take the dog for a walk',t:'Виводити собаку на прогулянку',tr:'Тейк зе дог фор е вок',c:'routines',ex:'He takes the dog for a walk.',exT:'Він виводить собаку на прогулянку.'},
+  {e:'Have a bath',t:'Приймати ванну',tr:'Хев е бас',c:'routines',ex:'I have a bath before bed.',exT:'Я приймаю ванну перед сном.'},
+  {e:'Sleep for eight hours',t:'Спати вісім годин',tr:'Сліп фор ейт ауерз',c:'routines',ex:'He sleeps for eight hours every night.',exT:'Він спить вісім годин щоночі.'},
+
+  // REACTIONS — миттєві реакції в розмові
+  {e:'Oh wow',t:'Ого / Вау',tr:'Оу вау',c:'reactions'},
+  {e:'No way!',t:'Не може бути! / Та ти що!',tr:'Ноу вей',c:'reactions'},
+  {e:'Are you serious?',t:'Ти серйозно?',tr:'Ар ю сіріес?',c:'reactions'},
+  {e:'Seriously?',t:'Серйозно? / Справді?',tr:'Сіріеслі?',c:'reactions'},
+  {e:'Really?',t:'Правда? / Справді?',tr:'Ріелі?',c:'reactions'},
+  {e:'Oh my God!',t:'Боже мій!',tr:'Оу май ґод!',c:'reactions'},
+  {e:'That\'s crazy!',t:'Це безумство! / Ось так так!',tr:'Зетс крейзі!',c:'reactions'},
+  {e:'That\'s awesome!',t:'Це круто! / Неймовірно!',tr:'Зетс осем!',c:'reactions'},
+  {e:'That\'s terrible!',t:'Це жахливо!',tr:'Зетс теріbl!',c:'reactions'},
+  {e:'That\'s so funny!',t:'Це так смішно!',tr:'Зетс соу фані!',c:'reactions'},
+  {e:'Oh no!',t:'О ні!',tr:'Оу ноу!',c:'reactions'},
+  {e:'Ugh',t:'Фу / Ех (вираз огиди/розчарування)',tr:'Аґ',c:'reactions'},
+  {e:'Phew',t:'Уф (полегшення)',tr:'Фью',c:'reactions'},
+  {e:'Oops',t:'Ой / Упс (дрібна помилка)',tr:'Упс',c:'reactions'},
+  {e:'Ouch',t:'Ой / Ай (боляче)',tr:'Ауч',c:'reactions'},
+  {e:'Aww',t:'Ой як мило! (розчуленість)',tr:'Оу',c:'reactions'},
+  {e:'I see',t:'Зрозуміло / Я розумію',tr:'Ай сі',c:'reactions'},
+  {e:'Got it',t:'Зрозумів / Усвідомив',tr:'Ґот іт',c:'reactions'},
+  {e:'Makes sense',t:'Логічно / Має сенс',tr:'Мейкс сенс',c:'reactions'},
+  {e:'Exactly!',t:'Точно! / Саме так!',tr:'Іґзектлі!',c:'reactions'},
+  {e:'Totally!',t:'Повністю! / Абсолютно!',tr:'Тоутлі!',c:'reactions'},
+  {e:'Absolutely!',t:'Абсолютно! / Звісно!',tr:'Ебсолютлі!',c:'reactions'},
+  {e:'For sure',t:'Точно / Звичайно',tr:'Фор шур',c:'reactions'},
+  {e:'Right?',t:'Правда ж? / Так?',tr:'Райт?',c:'reactions'},
+  {e:'Tell me about it',t:'Не кажи! / Знаю-знаю',tr:'Тел мі ебаут іт',c:'reactions'},
+  {e:'I know, right?',t:'Я знаю, правда ж?',tr:'Ай ноу, райт?',c:'reactions'},
+  {e:'That\'s what I said',t:'Я те саме й казав/ла',tr:'Зетс вот ай сед',c:'reactions'},
+  {e:'Good for you!',t:'Молодець! / Рада за тебе!',tr:'Ґуд фор ю!',c:'reactions'},
+  {e:'Oh well',t:'Ну що ж / Нічого не вдієш',tr:'Оу вел',c:'reactions'},
+  {e:'Whatever',t:'Як завгодно / Байдуже',tr:'Вотевер',c:'reactions'},
+
+  // SMALLTALK — small talk і заповнювачі
+  {e:'By the way',t:'До речі',tr:'Бай зе вей',c:'smalltalk'},
+  {e:'Anyway',t:'Так от / Але в будь-якому разі',tr:'Енівей',c:'smalltalk'},
+  {e:'Speaking of which',t:'До речі про це',tr:'Спікінґ оф віч',c:'smalltalk'},
+  {e:'What\'s up?',t:'Як справи? / Що нового?',tr:'Вотс ап?',c:'smalltalk'},
+  {e:'Not much',t:'Нічого особливого',tr:'Нот мач',c:'smalltalk'},
+  {e:'Same as usual',t:'Як завжди / Все те саме',tr:'Сейм ез южуел',c:'smalltalk'},
+  {e:'How have you been?',t:'Як ти? (давно не бачились)',tr:'Хау хев ю бін?',c:'smalltalk'},
+  {e:'Long time no see',t:'Давно не бачились',tr:'Лонґ тайм ноу сі',c:'smalltalk'},
+  {e:'It\'s been a while',t:'Минуло вже чимало часу',tr:'Іts бін е вайл',c:'smalltalk'},
+  {e:'How was your day?',t:'Як пройшов твій день?',tr:'Хау воз йор дей?',c:'smalltalk'},
+  {e:'How was your weekend?',t:'Як провів/ла вихідні?',tr:'Хау воз йор вікенд?',c:'smalltalk'},
+  {e:'What are you up to?',t:'Чим займаєшся? / Які плани?',tr:'Вот ар ю ап ту?',c:'smalltalk'},
+  {e:'What do you do?',t:'Ким ти працюєш?',tr:'Вот ду ю ду?',c:'smalltalk'},
+  {e:'Are you from here?',t:'Ти місцевий/місцева?',tr:'Ар ю фром хір?',c:'smalltalk'},
+  {e:'Have a good one',t:'Гарного дня / Всього найкращого',tr:'Хев е ґуд ван',c:'smalltalk'},
+  {e:'Take care',t:'Бережи себе',tr:'Тейк кеар',c:'smalltalk'},
+  {e:'Catch you later',t:'Побачимось пізніше',tr:'Кеч ю лейтер',c:'smalltalk'},
+  {e:'I\'ll let you know',t:'Дам тобі знати',tr:'Айл лет ю ноу',c:'smalltalk'},
+  {e:'Keep me posted',t:'Тримай мене в курсі',tr:'Кіп мі поустед',c:'smalltalk'},
+  {e:'Sounds good',t:'Звучить добре',tr:'Саундз ґуд',c:'smalltalk'},
+  {e:'Sounds like a plan',t:'Звучить як план',tr:'Саундз лайк е плен',c:'smalltalk'},
+  {e:'I\'m in',t:'Я за / Я беру участь',tr:'Айм ін',c:'smalltalk'},
+  {e:'I\'m out',t:'Я пас / Мене не буде',tr:'Айм аут',c:'smalltalk'},
+  {e:'Let\'s go',t:'Ходімо / Поїхали',tr:'Летс ґоу',c:'smalltalk'},
+  {e:'Let\'s hang out',t:'Давай побачимось / потусимо',tr:'Летс хенґ аут',c:'smalltalk'},
+
+  // FEELINGS — емоції та стани
+  {e:'I\'m excited',t:'Я в захваті / дуже хочу',tr:'Айм іксайтед',c:'feelings'},
+  {e:'I\'m nervous',t:'Я хвилююся',tr:'Айм нервес',c:'feelings'},
+  {e:'I\'m scared',t:'Мені страшно',tr:'Айм скеард',c:'feelings'},
+  {e:'I\'m confused',t:'Я збентежений/а / не розумію',tr:'Айм конф\'юзд',c:'feelings'},
+  {e:'I\'m annoyed',t:'Мене дратує / я роздратований/а',tr:'Айм еноід',c:'feelings'},
+  {e:'I\'m disappointed',t:'Я розчарований/а',tr:'Айм діcепойнтед',c:'feelings'},
+  {e:'I\'m proud',t:'Я пишаюся',tr:'Айм праud',c:'feelings'},
+  {e:'I\'m relieved',t:'Я з полегшенням',tr:'Айм рілівd',c:'feelings'},
+  {e:'I\'m bored',t:'Мені нудно',tr:'Айм борд',c:'feelings'},
+  {e:'I\'m overwhelmed',t:'Мене переповнює / дуже багато всього',tr:'Айм оувервелмd',c:'feelings'},
+  {e:'I\'m stressed',t:'Я в стресі',tr:'Айм стрест',c:'feelings'},
+  {e:'I\'m exhausted',t:'Я виснажений/а',tr:'Айм іґзостед',c:'feelings'},
+  {e:'I feel like',t:'Мені хочеться / Я відчуваю що',tr:'Ай філ лайк',c:'feelings'},
+  {e:'I can\'t stand it',t:'Я не можу це терпіти',tr:'Ай кент стенд іт',c:'feelings'},
+  {e:'I miss you',t:'Я скучив/ла за тобою',tr:'Ай міс ю',c:'feelings'},
+  {e:'I\'m so glad',t:'Я дуже радий/рада',tr:'Айм соу ґлед',c:'feelings'},
+  {e:'It bothers me',t:'Мене це турбує / дратує',tr:'Іт базерз мі',c:'feelings'},
+  {e:'I don\'t mind',t:'Мені все одно / не заперечую',tr:'Ай доунт майнд',c:'feelings'},
+  {e:'I don\'t care',t:'Мені байдуже',tr:'Ай доунт кеар',c:'feelings'},
+  {e:'I can\'t believe it',t:'Не можу повірити',tr:'Ай кент біліv іт',c:'feelings'},
+
+  // PHRASAL — найважливіші phrasal verbs
+  {e:'Figure out',t:'Розібратися / зрозуміти',tr:'Фіґер аут',c:'phrasal'},
+  {e:'Find out',t:'Дізнатися',tr:'Файнд аут',c:'phrasal'},
+  {e:'Give up',t:'Здатися / кинути',tr:'Ґіv ап',c:'phrasal'},
+  {e:'Give in',t:'Поступитися',tr:'Ґіv ін',c:'phrasal'},
+  {e:'Look up',t:'Шукати (в словнику/інтернеті)',tr:'Лук ап',c:'phrasal'},
+  {e:'Look forward to',t:'Чекати з нетерпінням',tr:'Лук форвард ту',c:'phrasal'},
+  {e:'Look after',t:'Доглядати / слідкувати',tr:'Лук афтер',c:'phrasal'},
+  {e:'Turn on',t:'Вмикати',tr:'Терн он',c:'phrasal'},
+  {e:'Turn off',t:'Вимикати',tr:'Терн оф',c:'phrasal'},
+  {e:'Turn up',t:'З\'явитися / підсилити звук',tr:'Терн ап',c:'phrasal'},
+  {e:'Show up',t:'З\'явитися / прийти',tr:'Шоу ап',c:'phrasal'},
+  {e:'End up',t:'Зрештою опинитися / завершитися',tr:'Енд ап',c:'phrasal'},
+  {e:'Pick up',t:'Забрати / підхопити / покращитися',tr:'Пік ап',c:'phrasal'},
+  {e:'Put off',t:'Відкласти',tr:'Пут оф',c:'phrasal'},
+  {e:'Call off',t:'Скасувати',tr:'Кол оф',c:'phrasal'},
+  {e:'Run out of',t:'Закінчитися (запас)',tr:'Ран аут оф',c:'phrasal'},
+  {e:'Run into',t:'Випадково зустріти',tr:'Ран інту',c:'phrasal'},
+  {e:'Come up with',t:'Придумати / вигадати',tr:'Кам ап віз',c:'phrasal'},
+  {e:'Come across',t:'Натрапити / справляти враження',tr:'Кам екрос',c:'phrasal'},
+  {e:'Bring up',t:'Підняти тему / виховати',tr:'Брінґ ап',c:'phrasal'},
+  {e:'Go through',t:'Пережити / переглянути',tr:'Ґоу сру',c:'phrasal'},
+  {e:'Go on',t:'Продовжувати / відбуватися',tr:'Ґоу он',c:'phrasal'},
+  {e:'Go over',t:'Переглянути / повторити',tr:'Ґоу оувер',c:'phrasal'},
+  {e:'Set up',t:'Налаштувати / організувати',tr:'Сет ап',c:'phrasal'},
+  {e:'Work out',t:'Тренуватися / вирішитися',tr:'Ворк аут',c:'phrasal'},
+  {e:'Hang on',t:'Почекай / триматися',tr:'Хенґ он',c:'phrasal'},
+  {e:'Hang out',t:'Проводити час / тусуватися',tr:'Хенґ аут',c:'phrasal'},
+  {e:'Sort out',t:'Розібратися / вирішити',tr:'Сорт аут',c:'phrasal'},
+  {e:'Point out',t:'Вказати на / звернути увагу',tr:'Пойнт аут',c:'phrasal'},
+  {e:'Move on',t:'Рухатися далі / забути і йти вперед',tr:'Мув он',c:'phrasal'},
+
+  // PHONE — телефонні та онлайн розмови
+  {e:'Hold on a second',t:'Зачекай секунду',tr:'Хоулд он е секенд',c:'phone'},
+  {e:'Can you hear me?',t:'Ти мене чуєш?',tr:'Кен ю хір мі?',c:'phone'},
+  {e:'You\'re breaking up',t:'Тебе перебиває / поганий зв\'язок',tr:'Йор брейкінґ ап',c:'phone'},
+  {e:'I\'ll call you back',t:'Передзвоню тобі',tr:'Айл кол ю бек',c:'phone'},
+  {e:'Can I call you later?',t:'Можу подзвонити пізніше?',tr:'Кен ай кол ю лейтер?',c:'phone'},
+  {e:'Is this a good time?',t:'Зараз зручно говорити?',tr:'Із зіс е ґуд тайм?',c:'phone'},
+  {e:'I\'ll text you',t:'Напишу тобі',tr:'Айл текст ю',c:'phone'},
+  {e:'Check your messages',t:'Перевір повідомлення',tr:'Чек йор месіджіз',c:'phone'},
+  {e:'I sent you a link',t:'Я відправив/ла тобі посилання',tr:'Ай сент ю е лінк',c:'phone'},
+  {e:'Can you send it to me?',t:'Можеш відправити мені?',tr:'Кен ю сенд іт ту мі?',c:'phone'},
+  {e:'Let me look it up',t:'Дай подивлюся (в телефоні/інтернеті)',tr:'Лет мі лук іт ап',c:'phone'},
+  {e:'Google it',t:'Загугли це',tr:'Ґуґл іт',c:'phone'},
+  {e:'My battery is dead',t:'У мене сів телефон',tr:'Май бетері із дед',c:'phone'},
+  {e:'I\'m on my way',t:'Я вже їду / йду',tr:'Айм он май вей',c:'phone'},
+  {e:'I\'ll be there in 10',t:'Буду через 10 хвилин',tr:'Айл бі зер ін тен',c:'phone'},
+  {e:'Where are you?',t:'Де ти?',tr:'Вер ар ю?',c:'phone'},
+  {e:'Are you still there?',t:'Ти ще там?',tr:'Ар ю стіл зер?',c:'phone'},
+  {e:'Can we reschedule?',t:'Можемо перенести?',tr:'Кен ві рішед\'юл?',c:'phone'},
+  {e:'Something came up',t:'Щось трапилось / виникли справи',tr:'Самсінґ кейм ап',c:'phone'},
+  {e:'I\'ll figure it out',t:'Розберуся з цим',tr:'Айл фіґер іт аут',c:'phone'},
+
+  // OPINION — вираження думки в розмові
+  {e:'I think so',t:'Я так думаю',tr:'Ай сінк соу',c:'opinion'},
+  {e:'I don\'t think so',t:'Я так не думаю',tr:'Ай доунт сінк соу',c:'opinion'},
+  {e:'I\'m not sure',t:'Я не впевнений/а',tr:'Айм нот шур',c:'opinion'},
+  {e:'I guess',t:'Мабуть / Напевно / Гадаю',tr:'Ай ґес',c:'opinion'},
+  {e:'I suppose',t:'Припускаю / Мабуть',tr:'Ай сепоуз',c:'opinion'},
+  {e:'I doubt it',t:'Сумніваюся в цьому',tr:'Ай даут іт',c:'opinion'},
+  {e:'It depends',t:'Залежить',tr:'Іт діпендз',c:'opinion'},
+  {e:'It depends on',t:'Залежить від...',tr:'Іт діпендз он',c:'opinion'},
+  {e:'That\'s a good point',t:'Добре зауваження',tr:'Зетс е ґуд пойнт',c:'opinion'},
+  {e:'I agree',t:'Я згоден/згодна',tr:'Ай еґрі',c:'opinion'},
+  {e:'I disagree',t:'Я не погоджуюся',tr:'Ай дісеґрі',c:'opinion'},
+  {e:'I\'m not a big fan of',t:'Я не великий фанат цього',tr:'Айм нот е біґ фен оф',c:'opinion'},
+  {e:'It\'s not my thing',t:'Це не моє',tr:'Іts нот май сінґ',c:'opinion'},
+  {e:'That\'s not the point',t:'Справа не в цьому',tr:'Зетс нот зе пойнт',c:'opinion'},
+  {e:'In my experience',t:'За моїм досвідом',tr:'Ін май іксперіенс',c:'opinion'},
+  {e:'As far as I\'m concerned',t:'Наскільки мене це стосується',tr:'Ез фар ез айм консерnd',c:'opinion'},
+  {e:'To be fair',t:'Чесно кажучи / Якщо по справедливості',tr:'Ту бі феар',c:'opinion'},
+  {e:'Having said that',t:'Але при цьому / Проте',tr:'Хевінґ сед зет',c:'opinion'},
+  {e:'At the same time',t:'Водночас',tr:'Ет зе сейм тайм',c:'opinion'},
+  {e:'On the bright side',t:'З позитивного боку',tr:'Он зе брайт сайд',c:'opinion'},
+
+  // STORY — розповідь та переказ
+  {e:'So basically',t:'Ну, якщо коротко',tr:'Соу бейсіклі',c:'story'},
+  {e:'The thing is',t:'Справа в тому, що',tr:'Зе сінґ із',c:'story'},
+  {e:'The point is',t:'Суть у тому, що',tr:'Зе пойнт із',c:'story'},
+  {e:'The thing about it is',t:'Річ у тому, що',tr:'Зе сінґ ебаут іт із',c:'story'},
+  {e:'Out of nowhere',t:'Нізвідки / раптово',tr:'Аут оф новер',c:'story'},
+  {e:'All of a sudden',t:'Раптово / несподівано',tr:'Ол оф е садн',c:'story'},
+  {e:'Next thing I know',t:'І тут виявляється що...',tr:'Некст сінґ ай ноу',c:'story'},
+  {e:'Long story short',t:'Якщо коротко',tr:'Лонґ сторі шорт',c:'story'},
+  {e:'It turned out',t:'Виявилося що',tr:'Іт терnd аут',c:'story'},
+  {e:'I ended up',t:'Я зрештою...',tr:'Ай ендед ап',c:'story'},
+  {e:'What happened was',t:'А було ось що...',tr:'Вот хепенд воз',c:'story'},
+  {e:'Can you believe that?',t:'Можеш повірити?',tr:'Кен ю біліv зет?',c:'story'},
+  {e:'You won\'t believe this',t:'Ти не повіриш',tr:'Ю воунт біліv зіс',c:'story'},
+  {e:'Guess what',t:'Здогадайся / Ти не повіриш',tr:'Ґес вот',c:'story'},
+  {e:'It\'s a long story',t:'Це довга історія',tr:'Іts е лонґ сторі',c:'story'},
+
+  // AGREEMENT — погодження та незгода
+  {e:'Exactly my point',t:'Саме те, що я й мав/ла на увазі',tr:'Іґзектлі май пойнт',c:'agree'},
+  {e:'That makes sense',t:'Це логічно',tr:'Зет мейкс сенс',c:'agree'},
+  {e:'Fair point',t:'Справедливо / Слушно',tr:'Феар пойнт',c:'agree'},
+  {e:'You\'re right',t:'Ти правий/права',tr:'Йор райт',c:'agree'},
+  {e:'You\'re wrong',t:'Ти помиляєшся',tr:'Йор ронґ',c:'agree'},
+  {e:'I see your point',t:'Я розумію твою думку',tr:'Ай сі йор пойнт',c:'agree'},
+  {e:'I hear you',t:'Я тебе чую / розумію',tr:'Ай хір ю',c:'agree'},
+  {e:'I\'m with you on that',t:'Я з тобою в цьому згоден/згодна',tr:'Айм віз ю он зет',c:'agree'},
+  {e:'That\'s debatable',t:'Це спірно',tr:'Зетс дібейтебл',c:'agree'},
+  {e:'I beg to differ',t:'Дозволю собі не погодитись',tr:'Ай беґ ту діфер',c:'agree'},
+  {e:'Not necessarily',t:'Не обов\'язково',tr:'Нот несесерілі',c:'agree'},
+  {e:'It\'s complicated',t:'Це складно',tr:'Іts компліケйтед',c:'agree'},
+  {e:'There\'s more to it',t:'Тут є більше нюансів',tr:'Зерз мор ту іт',c:'agree'},
+  {e:'It\'s not that simple',t:'Це не так просто',tr:'Іts нот зет сімпл',c:'agree'},
+];
+
+// ============ STATE ============
+const DATA_VERSION = '6';
+let words = [];
+let knownSet = new Set();
+let customWords = []; // тільки користувацькі слова
+let currentTab = 'flash';
+let flashIndex = 0;
+let flashFlipped = false;
+let flashQueue = [];
+let activeCats = new Set(Object.keys(CATEGORIES));
+let quizState = null;
+let searchQ = '';
+let cloudSynced = false;
+let srsData = {}; // { wordKey: { level: 0-5, nextReview: timestamp, lapses: 0 } }
+let typeState = null; // стан режиму "Письмо"
+let reviewState = null; // стан режиму "Повторення"
+let authUser = null;
+
+// ============ AUTH ============
+async function waitForFirebaseReady(maxWaitMs = 5000) {
+  const start = Date.now();
+  while ((!window.firebaseAPI || !window.firebaseAPI.isReady()) && Date.now() - start < maxWaitMs) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+}
+
+function renderLoginScreen(app) {
+  const authError = window.firebaseAPI && window.firebaseAPI.getAuthError ? window.firebaseAPI.getAuthError() : null;
+  app.innerHTML = `
+    <div style="text-align:center;padding:60px 20px">
+      <div style="font-size:48px;margin-bottom:16px">📚</div>
+      <p style="font-size:20px;font-weight:800;margin-bottom:10px">Увійди, щоб зберегти прогрес</p>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:24px">Твій прогрес автоматично синхронізується між усіма пристроями, де ти увійдеш через цей самий Google акаунт.</p>
+      <button class="btn-primary" style="max-width:280px;margin:0 auto" onclick="handleSignIn()">🔵 Увійти через Google</button>
+      ${authError ? `<div style="margin-top:24px;padding:12px 16px;background:rgba(255,71,87,.1);border:1px solid var(--accent);border-radius:10px;font-size:12px;color:var(--accent);text-align:left;word-break:break-all">⚠️ Помилка: ${authError}</div>` : ''}
+    </div>
+  `;
+}
+
+async function handleSignIn() {
+  if (!window.firebaseAPI) return;
+  // При redirect-вході сторінка перезавантажиться сама після повернення з Google
+  document.getElementById('app').innerHTML = `
+    <div style="text-align:center;padding:80px 20px;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:16px">🔄</div>
+      <p style="font-weight:600">Переходимо до Google...</p>
+    </div>`;
+  await window.firebaseAPI.signIn();
+}
+
+async function handleSignOut() {
+  if (!window.firebaseAPI) return;
+  await window.firebaseAPI.signOutUser();
+  authUser = null;
+  location.reload();
+}
+
+// ============ CLOUD STORAGE (Firebase) ============
+async function cloudLoad() {
+  try {
+    if (window.firebaseAPI) {
+      const data = await window.firebaseAPI.getProgress();
+      if (data) {
+        if (data.known) knownSet = new Set(data.known);
+        if (data.custom) customWords = data.custom;
+        if (data.cats) activeCats = new Set(data.cats);
+        if (data.srs) srsData = data.srs;
+      }
+      cloudSynced = true;
+    }
+  } catch(e) {
+    cloudSynced = false;
+  }
+  // Завжди будуємо повний список слів
+  words = [
+    ...BASE_WORDS.map(w => ({...w, known: false, seen: 0, correct: 0})),
+    ...customWords
+  ];
+}
+
+let saveTimer = null;
+async function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const knownArr = [...knownSet];
+    // Хмарне збереження через Firebase (прив'язане до Google акаунта)
+    if (window.firebaseAPI && cloudSynced) {
+      const ok = await window.firebaseAPI.setProgress({
+        known: knownArr,
+        custom: customWords,
+        cats: [...activeCats],
+        srs: srsData,
+        updatedAt: Date.now()
+      });
+      showSyncBadge(ok ? '✓ Збережено в хмарі' : '⚠ Помилка збереження');
+    }
+  }, 600);
+}
+
+function showSyncBadge(msg) {
+  let badge = document.getElementById('sync-badge');
+  if (!badge) return;
+  badge.textContent = msg;
+  badge.style.opacity = '1';
+  setTimeout(() => { badge.style.opacity = '0'; }, 2000);
+}
+
+function getFiltered() {
+  return words.filter(w => activeCats.has(w.c));
+}
+
+function getUnknown() {
+  return getFiltered().filter(w => !knownSet.has(w.e));
+}
+
+function updateNav() {
+  const stats = getSrsStats();
+  document.getElementById('nav-known').textContent = stats.mastered;
+  document.getElementById('nav-total').textContent = words.length;
+  const dueEl = document.getElementById('nav-due');
+  if (dueEl) {
+    if (stats.due > 0) {
+      dueEl.style.display = 'inline';
+      dueEl.style.color = 'var(--accent2)';
+      dueEl.innerHTML = `📅 ${stats.due} на сьогодні`;
+    } else {
+      dueEl.style.display = 'none';
+    }
+  }
+  const userEl = document.getElementById('nav-user');
+  if (userEl) {
+    if (authUser) {
+      userEl.style.display = 'inline';
+      const name = authUser.displayName ? authUser.displayName.split(' ')[0] : (authUser.email || '');
+      userEl.innerHTML = `👤 ${name} ⏏`;
+    } else {
+      userEl.style.display = 'none';
+    }
+  }
+}
+
+function badgeHtml(c) {
+  const cat = CATEGORIES[c] || {label: c, badge: 'badge-a1'};
+  return `<span class="badge ${cat.badge}">${cat.label}</span>`;
+}
+
+// ============ TABS ============
+function setTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['flash','type','quiz','review','list','add'][i] === t);
+  });
+  render();
+}
+
+// ============ RENDER ============
+function render() {
+  updateNav();
+  const app = document.getElementById('app');
+  if (currentTab === 'flash') renderFlash(app);
+  else if (currentTab === 'type') renderType(app);
+  else if (currentTab === 'quiz') renderQuiz(app);
+  else if (currentTab === 'review') renderReview(app);
+  else if (currentTab === 'list') renderList(app);
+  else if (currentTab === 'add') renderAdd(app);
+}
+
+// ---- FLASH ----
+function renderFlash(app) {
+  if (!flashQueue.length || flashQueue.every(i => i === -1)) {
+    const unk = getUnknown();
+    if (!unk.length) {
+      app.innerHTML = `<div class="result-box"><div class="big">🎉</div><p style="font-size:20px;font-weight:800;margin-top:12px">Ти вивчив усі слова!</p><p class="label">Категорій активно: ${activeCats.size}</p><button class="btn-primary" onclick="knownSet.clear();save();initFlash()">Почати знову</button></div>`;
+      renderFilters(app, true);
+      return;
+    }
+    initFlash();
+  }
+  const unk = getUnknown();
+  const total = unk.length + knownSet.size;
+  const pct = total ? Math.round(knownSet.size / total * 100) : 0;
+
+  const idx = flashQueue[flashIndex];
+  const w = words[idx];
+
+  app.innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Прогрес</span><span>${knownSet.size} / ${total}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div id="filter-area"></div>
+    <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">Картка ${flashIndex+1} з ${flashQueue.length}</p>
+    <div class="card-wrap">
+      <div class="card ${flashFlipped?'flipped':''}" id="flash-card" onclick="flipCard()">
+        <div class="card-face card-front">
+          <div class="card-hint">Англійське слово</div>
+          <div class="card-word">${w.e}</div>
+          ${w.tr ? `<div class="card-transcription">[${w.tr}]</div>` : ''}
+          <div style="margin-top:14px">${badgeHtml(w.c)}</div>
+          <div class="card-tap-hint">👆 Натисни, щоб побачити переклад</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-hint">Переклад</div>
+          <div class="card-translation">${w.t}</div>
+          <div class="card-word" style="font-size:18px;margin-top:10px">${w.e}</div>
+          ${w.ex ? `<div class="card-example"><div class="card-example-en">${w.ex}</div><div class="card-example-uk">${w.exT}</div></div>` : ''}
+          <div style="margin-top:10px">${badgeHtml(w.c)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-wrong" onclick="markCard(false)">✗ Не знаю</button>
+      <button class="btn btn-skip" onclick="nextCard()">→ Пропустити</button>
+      <button class="btn btn-right" onclick="markCard(true)">✓ Знаю!</button>
+    </div>
+  `;
+  renderFilters(document.getElementById('filter-area'), false);
+}
+
+function renderFilters(container, standalone) {
+  const div = document.createElement('div');
+  div.className = 'filters';
+  div.style.marginBottom = '14px';
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (activeCats.has(key) ? ' on' : '');
+    btn.textContent = cat.label;
+    btn.onclick = () => { 
+      if (activeCats.has(key)) { if (activeCats.size > 1) activeCats.delete(key); }
+      else activeCats.add(key);
+      initFlash();
+      render();
+    };
+    div.appendChild(btn);
+  });
+  if (standalone) { container.appendChild(div); }
+  else { container.replaceWith ? container.replaceWith(div) : container.appendChild(div); }
+}
+
+function initFlash() {
+  flashFlipped = false;
+  const unk = getUnknown();
+  // shuffle
+  flashQueue = unk.map((_, i) => words.indexOf(unk[i]));
+  for (let i = flashQueue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [flashQueue[i], flashQueue[j]] = [flashQueue[j], flashQueue[i]];
+  }
+  flashIndex = 0;
+}
+
+function flipCard() {
+  flashFlipped = !flashFlipped;
+  const card = document.getElementById('flash-card');
+  if (card) card.classList.toggle('flipped', flashFlipped);
+}
+
+function markCard(known) {
+  const idx = flashQueue[flashIndex];
+  if (known) {
+    knownSet.add(words[idx].e);
+  }
+  save();
+  flashFlipped = false;
+  flashIndex++;
+  if (flashIndex >= flashQueue.length) {
+    flashQueue = [];
+    flashIndex = 0;
+  }
+  render();
+}
+
+function nextCard() {
+  flashFlipped = false;
+  flashIndex = (flashIndex + 1) % (flashQueue.length || 1);
+  render();
+}
+
+// ============ SRS (SPACED REPETITION) ============
+// Інтервали в днях для кожного рівня (0=новий, далі рівні зростання)
+const SRS_INTERVALS = [0, 1, 3, 7, 16, 35, 75]; // днів до наступного повторення
+
+function getSrsInfo(wordKey) {
+  return srsData[wordKey] || { level: 0, nextReview: 0, lapses: 0 };
+}
+
+function srsAnswer(wordKey, grade) {
+  // grade: 'again' | 'hard' | 'good' | 'easy'
+  const info = getSrsInfo(wordKey);
+  let newLevel = info.level;
+  let lapses = info.lapses || 0;
+  if (grade === 'again') {
+    newLevel = 0;
+    lapses++;
+  } else if (grade === 'hard') {
+    newLevel = Math.max(0, info.level - 1);
+  } else if (grade === 'good') {
+    newLevel = Math.min(SRS_INTERVALS.length - 1, info.level + 1);
+  } else if (grade === 'easy') {
+    newLevel = Math.min(SRS_INTERVALS.length - 1, info.level + 2);
+  }
+  const days = SRS_INTERVALS[newLevel];
+  const nextReview = Date.now() + days * 24 * 60 * 60 * 1000;
+  srsData[wordKey] = { level: newLevel, nextReview, lapses };
+  // Якщо рівень досить високий — рахуємо слово як "відоме"
+  if (newLevel >= 3) knownSet.add(wordKey);
+  save();
+}
+
+function getDueWords() {
+  const now = Date.now();
+  return getFiltered().filter(w => {
+    const info = getSrsInfo(w.e);
+    return info.nextReview <= now;
+  });
+}
+
+function getSrsStats() {
+  const filtered = getFiltered();
+  let newC = 0, learning = 0, mastered = 0, due = 0;
+  const now = Date.now();
+  filtered.forEach(w => {
+    const info = getSrsInfo(w.e);
+    if (info.level === 0 && !srsData[w.e]) newC++;
+    else if (info.level >= 4) mastered++;
+    else learning++;
+    if (info.nextReview <= now) due++;
+  });
+  return { newC, learning, mastered, due, total: filtered.length };
+}
+
+// ---- TYPE-IN MODE (Письмо) ----
+function renderType(app) {
+  const filtered = getFiltered();
+  if (filtered.length < 1) {
+    app.innerHTML = `<div class="empty"><div class="icon">😅</div><p>Немає слів в активних категоріях</p></div>`;
+    return;
+  }
+  if (!typeState || typeState.done) {
+    startTypeSession(filtered);
+    return;
+  }
+  const ts = typeState;
+  if (ts.showResult) {
+    app.innerHTML = `
+      <div class="result-box">
+        <div class="big ${ts.score > ts.words.length/2 ? 'val-green' : 'val-red'}">${ts.score}/${ts.words.length}</div>
+        <div class="label">Правильно написано</div>
+        <div class="result-grid">
+          <div class="result-stat"><div class="val val-green">${ts.score}</div><div class="lbl">✓ Правильно</div></div>
+          <div class="result-stat"><div class="val val-red">${ts.words.length - ts.score}</div><div class="lbl">✗ Помилки</div></div>
+        </div>
+        <button class="btn-primary" onclick="typeState=null;render()">Ще раз</button>
+      </div>
+    `;
+    return;
+  }
+
+  const w = ts.words[ts.current];
+  const pct = Math.round(ts.current / ts.words.length * 100);
+  const direction = ts.direction; // 'toEnglish' or 'toUkrainian'
+
+  app.innerHTML = `
+    <div class="progress-wrap" style="margin-bottom:18px">
+      <div class="progress-label"><span>Слово ${ts.current+1} з ${ts.words.length}</span><span>Правильно: ${ts.score}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="type-card">
+      <div class="type-prompt-label">${direction === 'toEnglish' ? 'Напиши англійською' : 'Напиши перекладом'}</div>
+      <div class="type-prompt">${direction === 'toEnglish' ? w.t : w.e}</div>
+      ${direction === 'toUkrainian' && w.tr ? `<div class="type-prompt-sub">[${w.tr}]</div>` : ''}
+    </div>
+    <div class="type-input-wrap">
+      <input type="text" class="type-input" id="type-input" autocomplete="off" autocapitalize="off" placeholder="Введи відповідь..." onkeydown="if(event.key==='Enter')checkTypeAnswer()" />
+    </div>
+    <div class="type-feedback" id="type-feedback"></div>
+    <div class="actions">
+      <button class="btn btn-skip" onclick="skipTypeAnswer()">→ Пропустити</button>
+      <button class="btn-primary" style="flex:1" onclick="checkTypeAnswer()">Перевірити</button>
+    </div>
+  `;
+  setTimeout(() => { const inp = document.getElementById('type-input'); if (inp) inp.focus(); }, 50);
+}
+
+function startTypeSession(filtered) {
+  const pool = [...filtered].sort(() => Math.random() - 0.5).slice(0, 15);
+  typeState = {
+    words: pool,
+    current: 0,
+    score: 0,
+    done: false,
+    showResult: false,
+    direction: Math.random() > 0.5 ? 'toEnglish' : 'toUkrainian',
+    answered: false
+  };
+  render();
+}
+
+function normalizeAnswer(s) {
+  return s.toLowerCase().trim().replace(/['’‘]/g, "'").replace(/\s+/g, ' ');
+}
+
+function checkTypeAnswer() {
+  const ts = typeState;
+  if (ts.answered) { nextTypeWord(); return; }
+  const input = document.getElementById('type-input');
+  const userAns = normalizeAnswer(input.value);
+  const w = ts.words[ts.current];
+  const correctAns = ts.direction === 'toEnglish' ? w.e : w.t;
+  // Дозволяємо часткове співпадіння для перекладу (бо може бути кілька варіантів через /)
+  const correctVariants = normalizeAnswer(correctAns).split(/[\/,]/).map(s => s.trim());
+  const isCorrect = correctVariants.some(v => v === userAns || (userAns.length > 2 && v.includes(userAns)));
+
+  const feedback = document.getElementById('type-feedback');
+  if (isCorrect) {
+    input.classList.add('correct');
+    feedback.className = 'type-feedback correct';
+    feedback.textContent = '✓ Правильно!';
+    ts.score++;
+    srsAnswer(w.e, 'good');
+  } else {
+    input.classList.add('incorrect');
+    feedback.className = 'type-feedback incorrect';
+    feedback.innerHTML = `✗ Правильна відповідь: <b>${correctAns}</b>`;
+    srsAnswer(w.e, 'again');
+  }
+  input.disabled = true;
+  ts.answered = true;
+  // Змінюємо кнопку Перевірити на "Далі"
+  const btn = document.querySelector('.type-card').nextElementSibling.nextElementSibling.querySelector('.btn-primary');
+  if (btn) btn.textContent = 'Далі →';
+}
+
+function nextTypeWord() {
+  typeState.answered = false;
+  typeState.current++;
+  if (typeState.current >= typeState.words.length) {
+    typeState.showResult = true;
+  }
+  render();
+}
+
+function skipTypeAnswer() {
+  if (typeState.answered) { nextTypeWord(); return; }
+  nextTypeWord();
+}
+
+// ---- REVIEW MODE (SRS Повторення) ----
+function renderReview(app) {
+  const stats = getSrsStats();
+  if (!reviewState || reviewState.done) {
+    const due = getDueWords();
+    if (due.length === 0) {
+      app.innerHTML = `
+        <div class="review-stats">
+          <div class="review-stat-box"><div class="num" style="color:var(--blue)">${stats.newC}</div><div class="lbl">Нові</div></div>
+          <div class="review-stat-box"><div class="num" style="color:var(--accent2)">${stats.learning}</div><div class="lbl">Вчу</div></div>
+          <div class="review-stat-box"><div class="num" style="color:var(--green)">${stats.mastered}</div><div class="lbl">Засвоєно</div></div>
+        </div>
+        <div class="result-box">
+          <div class="big">🎉</div>
+          <p style="font-size:18px;font-weight:800;margin-top:12px">На сьогодні все повторено!</p>
+          <p class="label">Повертайся пізніше — нові слова з'являться за розкладом</p>
+        </div>
+      `;
+      return;
+    }
+    startReviewSession(due);
+    return;
+  }
+
+  const rs = reviewState;
+  if (rs.showResult) {
+    app.innerHTML = `
+      <div class="result-box">
+        <div class="big">✅</div>
+        <p style="font-size:18px;font-weight:800;margin-top:12px">Повторено ${rs.words.length} слів!</p>
+        <button class="btn-primary" onclick="reviewState=null;render()">Гаразд</button>
+      </div>
+    `;
+    return;
+  }
+
+  const w = rs.words[rs.current];
+  const pct = Math.round(rs.current / rs.words.length * 100);
+
+  app.innerHTML = `
+    <div class="progress-wrap" style="margin-bottom:18px">
+      <div class="progress-label"><span>Повторення ${rs.current+1} з ${rs.words.length}</span><span>📅 На сьогодні</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="card-wrap">
+      <div class="card ${rs.flipped?'flipped':''}" id="review-card" onclick="flipReviewCard()">
+        <div class="card-face card-front">
+          <div class="card-hint">Англійське слово</div>
+          <div class="card-word">${w.e}</div>
+          ${w.tr ? `<div class="card-transcription">[${w.tr}]</div>` : ''}
+          <div style="margin-top:14px">${badgeHtml(w.c)}</div>
+          <div class="card-tap-hint">👆 Натисни, щоб згадати переклад</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-hint">Переклад</div>
+          <div class="card-translation">${w.t}</div>
+          ${w.ex ? `<div class="card-example"><div class="card-example-en">${w.ex}</div><div class="card-example-uk">${w.exT}</div></div>` : ''}
+        </div>
+      </div>
+    </div>
+    ${rs.flipped ? `
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Як добре ти пам'ятав це слово?</p>
+      <div class="srs-buttons">
+        <button class="srs-btn srs-again" onclick="answerReview('again')">Забув<span class="srs-sub">1д</span></button>
+        <button class="srs-btn srs-hard" onclick="answerReview('hard')">Важко<span class="srs-sub">${SRS_INTERVALS[Math.max(0,getSrsInfo(w.e).level-1)]||1}д</span></button>
+        <button class="srs-btn srs-good" onclick="answerReview('good')">Добре<span class="srs-sub">${SRS_INTERVALS[Math.min(SRS_INTERVALS.length-1,getSrsInfo(w.e).level+1)]}д</span></button>
+        <button class="srs-btn srs-easy" onclick="answerReview('easy')">Легко<span class="srs-sub">${SRS_INTERVALS[Math.min(SRS_INTERVALS.length-1,getSrsInfo(w.e).level+2)]}д</span></button>
+      </div>
+    ` : `<p style="text-align:center;font-size:12px;color:var(--muted)">Спочатку згадай переклад, потім натисни картку</p>`}
+  `;
+}
+
+function startReviewSession(due) {
+  reviewState = {
+    words: due.sort(() => Math.random() - 0.5),
+    current: 0,
+    flipped: false,
+    done: false,
+    showResult: false
+  };
+  render();
+}
+
+function flipReviewCard() {
+  reviewState.flipped = !reviewState.flipped;
+  render();
+}
+
+function answerReview(grade) {
+  const rs = reviewState;
+  const w = rs.words[rs.current];
+  srsAnswer(w.e, grade);
+  rs.flipped = false;
+  rs.current++;
+  if (rs.current >= rs.words.length) {
+    rs.showResult = true;
+  }
+  render();
+}
+
+
+function renderQuiz(app) {
+  if (!quizState || quizState.done) {
+    const filtered = getFiltered();
+    if (filtered.length < 4) {
+      app.innerHTML = `<div class="empty"><div class="icon">😅</div><p>Потрібно хоча б 4 слова в активних категоріях</p></div>`;
+      return;
+    }
+    if (!quizState || quizState.done) {
+      startQuiz(filtered);
+      return;
+    }
+  }
+
+  const qs = quizState;
+  const q = qs.questions[qs.current];
+  const pct = Math.round(qs.current / qs.questions.length * 100);
+
+  if (qs.showResult) {
+    app.innerHTML = `
+      <div class="result-box">
+        <div class="big ${qs.score > qs.questions.length/2 ? 'val-green' : 'val-red'}">${qs.score}/${qs.questions.length}</div>
+        <div class="label">Правильних відповідей</div>
+        <div class="result-grid">
+          <div class="result-stat"><div class="val val-green">${qs.score}</div><div class="lbl">✓ Правильно</div></div>
+          <div class="result-stat"><div class="val val-red">${qs.questions.length - qs.score}</div><div class="lbl">✗ Помилки</div></div>
+        </div>
+        <button class="btn-primary" onclick="quizState=null;render()">Пройти ще раз</button>
+      </div>
+    `;
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="progress-wrap" style="margin-bottom:20px">
+      <div class="progress-label"><span>Питання ${qs.current+1} з ${qs.questions.length}</span><span>Правильно: ${qs.score}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:20px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Як перекласти?</div>
+      <div style="font-size:28px;font-weight:800;color:var(--accent)">${q.word}</div>
+      ${q.tr ? `<div style="font-size:13px;color:var(--muted);margin-top:6px">[${q.tr}]</div>` : ''}
+    </div>
+    <div class="quiz-options" id="quiz-opts">
+      ${q.options.map((opt, i) => `<button class="quiz-opt" onclick="answerQuiz(${i})">${opt}</button>`).join('')}
+    </div>
+  `;
+}
+
+function startQuiz(filtered) {
+  // shuffle & take up to 20
+  const pool = [...filtered].sort(() => Math.random() - 0.5).slice(0, 20);
+  const questions = pool.map(w => {
+    const wrong = filtered.filter(x => x.e !== w.e).sort(() => Math.random() - 0.5).slice(0, 3);
+    const options = [w.t, ...wrong.map(x => x.t)].sort(() => Math.random() - 0.5);
+    return { word: w.e, tr: w.tr, correct: w.t, options };
+  });
+  quizState = { questions, current: 0, score: 0, done: false, showResult: false };
+  render();
+}
+
+function answerQuiz(i) {
+  const qs = quizState;
+  const q = qs.questions[qs.current];
+  const opts = document.querySelectorAll('.quiz-opt');
+  const chosen = q.options[i];
+  const isCorrect = chosen === q.correct;
+  opts.forEach((btn, idx) => {
+    if (q.options[idx] === q.correct) btn.classList.add('correct');
+    else if (idx === i && !isCorrect) btn.classList.add('wrong');
+    btn.disabled = true;
+  });
+  if (isCorrect) qs.score++;
+  setTimeout(() => {
+    qs.current++;
+    if (qs.current >= qs.questions.length) qs.showResult = true;
+    render();
+  }, 900);
+}
+
+// ---- LIST ----
+function renderList(app) {
+  const q = searchQ.toLowerCase();
+  const filtered = words.filter(w =>
+    (activeCats.has(w.c)) &&
+    (!q || w.e.toLowerCase().includes(q) || w.t.toLowerCase().includes(q))
+  );
+  const stats = getSrsStats();
+
+  app.innerHTML = `
+    <input class="search-input" placeholder="🔍 Пошук слова або перекладу..." value="${searchQ}" oninput="searchQ=this.value;render()" />
+    <div id="list-filter"></div>
+    <div class="progress-wrap" style="margin-bottom:14px">
+      <div class="progress-label"><span>Засвоєно: <b style="color:var(--green)">${stats.mastered}</b> з ${stats.total}</span><span>Показано: ${filtered.length}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${stats.total ? stats.mastered/stats.total*100 : 0}%"></div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-skip" style="flex:none;padding:6px 14px;font-size:12px" onclick="if(confirm('Скинути весь прогрес?')){knownSet.clear();srsData={};save();render();}">Скинути прогрес</button>
+    </div>
+    <div class="word-list">
+      ${filtered.length ? filtered.map(w => {
+        const info = getSrsInfo(w.e);
+        const levelColor = info.level === 0 ? 'var(--border)' : info.level < 3 ? 'var(--accent2)' : 'var(--green)';
+        const levelLabel = info.level === 0 ? 'нове' : info.level < 3 ? `рівень ${info.level}` : 'засвоєно';
+        return `
+        <div class="word-item">
+          <div class="known-dot" style="background:${levelColor}" title="${levelLabel}"></div>
+          <div class="eng">${w.e}</div>
+          <div class="trans">${w.t}</div>
+          <div class="cat">${(CATEGORIES[w.c]||{label:w.c}).label}</div>
+          <button style="background:none;border:none;cursor:pointer;font-size:16px;padding:0 4px" onclick="toggleKnown('${w.e.replace(/'/g,"\\'")}')">${info.level>=3?'★':'☆'}</button>
+        </div>
+      `;}).join('') : '<div class="empty"><div class="icon">🔍</div><p>Нічого не знайдено</p></div>'}
+    </div>
+  `;
+  renderFilters(document.getElementById('list-filter'), false);
+}
+
+function toggleKnown(e) {
+  if (knownSet.has(e)) knownSet.delete(e);
+  else knownSet.add(e);
+  save();
+  render();
+}
+
+// ---- ADD ----
+function renderAdd(app) {
+  app.innerHTML = `
+    <div class="add-form">
+      <h3>☁️ Хмарна синхронізація</h3>
+      <p style="font-size:13px;color:var(--muted)">Увійшла як <b style="color:var(--text)">${authUser ? (authUser.email || authUser.displayName) : '...'}</b>. Прогрес автоматично синхронізується з усіма пристроями, де ти заходиш у тренажер через цей самий Google акаунт.</p>
+      <button class="btn btn-skip" style="margin-top:10px;padding:8px 16px;font-size:13px" onclick="handleSignOut()">Вийти з акаунта</button>
+    </div>
+    <div class="add-form">
+      <h3>➕ Додати нове слово</h3>
+      <div class="form-row">
+        <input class="form-input" id="new-eng" placeholder="Англійське слово" />
+        <input class="form-input" id="new-trans" placeholder="Переклад (укр)" />
+      </div>
+      <div class="form-row">
+        <input class="form-input" id="new-tr" placeholder="Транскрипція (необов'язково)" />
+        <select class="form-input" id="new-cat">
+          ${Object.entries(CATEGORIES).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn-primary" onclick="addWord()">Додати слово</button>
+    </div>
+    <div class="section-title">Мої слова (${customWords.length})</div>
+    <div class="word-list">
+      ${customWords.length ? [...customWords].reverse().map(w => `
+        <div class="word-item">
+          <div class="known-dot ${knownSet.has(w.e)?'known':'unknown'}"></div>
+          <div class="eng">${w.e}</div>
+          <div class="trans">${w.t}</div>
+          <div class="cat">${(CATEGORIES[w.c]||{label:w.c}).label}</div>
+          <button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--accent);padding:0 4px" onclick="deleteWord('${w.e.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      `).join('') : '<p style="color:var(--muted);font-size:13px">Тут з\'являться слова, які ти додаси вручну</p>'}
+    </div>
+  `;
+}
+
+function addWord() {
+  const e = document.getElementById('new-eng').value.trim();
+  const t = document.getElementById('new-trans').value.trim();
+  const tr = document.getElementById('new-tr').value.trim();
+  const c = document.getElementById('new-cat').value;
+  if (!e || !t) { alert('Введи слово та переклад!'); return; }
+  if (words.find(w => w.e.toLowerCase() === e.toLowerCase())) { alert('Це слово вже є!'); return; }
+  const newWord = { e, t, tr, c, known: false, seen: 0, correct: 0 };
+  customWords.push(newWord);
+  words.push(newWord);
+  save();
+  render();
+}
+
+function deleteWord(e) {
+  customWords = customWords.filter(w => w.e !== e);
+  words = words.filter(w => w.e !== e);
+  knownSet.delete(e);
+  save();
+  render();
+}
+
+// ============ INIT ============
+async function startAppAfterAuth() {
+  document.getElementById('app').innerHTML = `
+    <div style="text-align:center;padding:80px 20px;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:16px">☁️</div>
+      <p style="font-weight:600">Завантажую прогрес...</p>
+    </div>`;
+  await cloudLoad();
+  initFlash();
+  render();
+}
+
+async function init() {
+  document.getElementById('app').innerHTML = `
+    <div style="text-align:center;padding:80px 20px;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:16px">🔌</div>
+      <p style="font-weight:600">Підключення...</p>
+    </div>`;
+  await waitForFirebaseReady();
+
+  if (!window.firebaseAPI) {
+    // Firebase не завантажився (немережне середовище) — працюємо локально без хмари
+    cloudSynced = false;
+    await cloudLoad();
+    initFlash();
+    render();
+    return;
+  }
+
+  // Чекаємо завершення обробки редіректу від Google (якщо щойно повернулись)
+  if (window.fbRedirectPromise) {
+    try { await window.fbRedirectPromise; } catch(e) {}
+  }
+
+  const user = window.firebaseAPI.getUser();
+  if (user) {
+    authUser = user;
+    await startAppAfterAuth();
+  } else {
+    renderLoginScreen(document.getElementById('app'));
+  }
+
+  // Реагуємо на майбутні зміни авторизації (наприклад вихід)
+  window.onAuthChange = async (u) => {
+    if (u && !authUser) {
+      authUser = u;
+      await startAppAfterAuth();
+    } else if (!u && authUser) {
+      authUser = null;
+      renderLoginScreen(document.getElementById('app'));
+    }
+  };
+}
+init();
+</script>
+</body>
+</html>
